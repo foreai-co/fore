@@ -5,7 +5,7 @@ name: build-test-lint
 run-name: Build, test and lint by ${{ github.actor }}, PR ${{ github.ref }}
 
 env:
-  GH_WORKFLOW_TARGET: foresight
+  GH_WORKFLOW_TARGET: fore
 
 on:
   pull_request:
