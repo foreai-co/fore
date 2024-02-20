@@ -1,0 +1,43 @@
+[project]
+name = "fore"
+version = "0.1.0"
+readme = "README.md"
+authors = [
+    { name = "fore ai", email = "info@foreai.co" }
+]
+description = "fore ai packages"
+requires-python = ">= 3.8"
+maintainers = [
+    { name = "fore ai", email = "info@foreai.co" }
+]
+license = {text = "Apache 2.0 License"}
+
+dependencies = [
+    'pydantic',
+    'requests',
+]
+
+[project.optional-dependencies]
+extras = [
+    'pandas',
+]
+
+all = ['fore[extras]']
+
+[tool.setuptools]
+packages = ["fore", "fore.foresight"]
+
+[tool.autopep8]
+max_line_length = 80
+
+[project.urls]
+Homepage = "https://foreai.co"
+Repository = "https://github.com/foreai-co/fore"
+Issues = "https://github.com/foreai-co/fore/issues"
+
+[classifiers]
+"Development Status" = "4 - Beta"
+"Intended Audience" = "Developers"
+"License" = "OSI Approved :: Apache Software License"
+"Topic" = "AI :: Natural Language Processing"
+  
