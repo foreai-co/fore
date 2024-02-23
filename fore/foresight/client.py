@@ -15,18 +15,22 @@ from fore.foresight.utils import convert_to_pandas_dataframe
 GenerateFnT = Callable[[str], InferenceOutput]
 
 GATEWAY_URL = "https://foresight-gateway.foreai.co"
-logging.basicConfig(format="foresight %(levelname)s: %(message)s",
-                    level=logging.WARNING)
 
 
 class Foresight:
     """The main client class for the foresight API."""
 
-    def __init__(self, api_token: str, api_url: str = GATEWAY_URL):
+    def __init__(self,
+                 api_token: str,
+                 api_url: str = GATEWAY_URL,
+                 log_level: int = logging.INFO):
         self.api_token = api_token
         self.api_url = api_url
 
         self.timeout_seconds = 60
+        logging.basicConfig(format="foresight %(levelname)s: %(message)s",
+                            level=log_level)
+        logging.info("Foresight client initialized")
 
     def __make_request(self,
                        method: str,
@@ -119,10 +123,15 @@ class Foresight:
 
         Returns: the HTTP response on success or raises an HTTPError on failure.
         """
-        return self.__make_request(
+        response = self.__make_request(
             method="post",
             endpoint="/api/eval/run",
             input_json=run_config.model_dump(mode="json"))
+
+        if response.status_code == 200:
+            logging.info("Eval run %s created.", run_config.experiment_id)
+
+        return response
 
     def generate_answers_and_run_eval(self, generate_fn: GenerateFnT,
                                       run_config: EvalRunConfig) -> Response:
@@ -150,9 +159,16 @@ class Foresight:
         outputs = UploadInferenceOutputsRequest(
             experiment_id=experiment_id, entry_id_to_inference_output=outputs)
 
-        return self.__make_request(method="put",
-                                   endpoint="/api/eval/run/entries",
-                                   input_json=outputs.model_dump(mode="json"))
+        response = self.__make_request(
+            method="put",
+            endpoint="/api/eval/run/entries",
+            input_json=outputs.model_dump(mode="json"))
+
+        if response.status_code == 200:
+            logging.info("Eval run successful."
+                         "Visit https://foresight.foreai.co to view results.")
+
+        return response
 
     def __convert_evalrun_details_to_dataframe(self, details: EvalRunDetails):
         """Converts an EvalRunDetails object to a DataFrame."""
