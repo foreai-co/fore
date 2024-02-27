@@ -62,7 +62,8 @@ class TestForeSight(unittest.TestCase):
 
     @patch("uuid.uuid4")
     @patch("requests.request")
-    def test_create_simple_evalset_with_references(self, mock_request, mock_uuid):
+    def test_create_simple_evalset_with_references(
+            self, mock_request, mock_uuid):
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "evalset_id": "my_evalset",
