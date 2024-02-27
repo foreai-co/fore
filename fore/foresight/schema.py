@@ -7,8 +7,9 @@ from typing import Dict, List, Optional
 from pydantic import BaseModel
 
 
-class EvalsetEntry(BaseModel):
-    """Represents the model's input (query) for a single eval entry."""
+class EvalsetQATuple(BaseModel):
+    """Represents the model's input (query) for a single eval entry.
+    """
     query: str
     reference_answer: Optional[str] = None
 
@@ -19,9 +20,14 @@ class EvalsetMetadata(BaseModel):
     num_entries: int = 0
 
 
-class EvalsetEntryWithMetadata(BaseModel):
+class Evalsets(BaseModel):
+    """Metadata for all evalsets."""
+    entries: list[EvalsetMetadata]
+
+
+class EvalsetEntry(EvalsetQATuple):
     """EvalsetEntry with additional metadata."""
-    entry: EvalsetEntry
+    # The identifier of the eval entry.
     entry_id: str
     # The UTC datetime when the eval entry was created.
     creation_time: Optional[datetime] = None
@@ -30,7 +36,7 @@ class EvalsetEntryWithMetadata(BaseModel):
 class Evalset(BaseModel):
     "A stored evalset."
     evalset_id: str
-    entries: List[EvalsetEntryWithMetadata]
+    entries: list[EvalsetEntry]
 
 
 class InferenceOutput(BaseModel):

@@ -21,13 +21,15 @@ class TestForeSight(unittest.TestCase):
         self.client = Foresight(api_token=TEST_TOKEN, api_url=TEST_URL)
         self.client.timeout_seconds = TEST_TIMEOUT
 
+    @patch("uuid.uuid4")
     @patch("requests.request")
-    def test_create_simple_evalset(self, mock_request):
+    def test_create_simple_evalset(self, mock_request, mock_uuid):
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "evalset_id": "my_evalset",
             "num_entries": 2
         }
+        mock_uuid.side_effect = ["my_uuid1", "my_uuid2"]
 
         mock_request.return_value = mock_response
 
@@ -44,18 +46,24 @@ class TestForeSight(unittest.TestCase):
                     "my_evalset",
                 "evalset_entries": [{
                     "query": "query1",
-                    "reference_answer": None
+                    "reference_answer": None,
+                    "entry_id": "my_uuid1",
+                    "creation_time": None
                 }, {
                     "query": "query2",
-                    "reference_answer": None
+                    "reference_answer": None,
+                    "entry_id": "my_uuid2",
+                    "creation_time": None
                 }]
             },
             timeout=TEST_TIMEOUT)
 
         assert isinstance(result, EvalsetMetadata)
 
+    @patch("uuid.uuid4")
     @patch("requests.request")
-    def test_create_simple_evalset_with_references(self, mock_request):
+    def test_create_simple_evalset_with_references(
+            self, mock_request, mock_uuid):
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "evalset_id": "my_evalset",
@@ -63,6 +71,7 @@ class TestForeSight(unittest.TestCase):
         }
 
         mock_request.return_value = mock_response
+        mock_uuid.side_effect = ["my_uuid1", "my_uuid2"]
 
         result = self.client.create_simple_evalset("my_evalset",
                                                    ["query1", "query2"],
@@ -78,10 +87,14 @@ class TestForeSight(unittest.TestCase):
                     "my_evalset",
                 "evalset_entries": [{
                     "query": "query1",
-                    "reference_answer": "reference1"
+                    "reference_answer": "reference1",
+                    "entry_id": "my_uuid1",
+                    "creation_time": None
                 }, {
                     "query": "query2",
-                    "reference_answer": "reference2"
+                    "reference_answer": "reference2",
+                    "entry_id": "my_uuid2",
+                    "creation_time": None
                 }]
             },
             timeout=TEST_TIMEOUT)
@@ -232,6 +245,7 @@ class TestForeSight(unittest.TestCase):
                 "my-smart-llm",
             "entries": [{
                 "input": {
+                    "entry_id": "my-entry-id",
                     "query": "who is the king of the world",
                     "reference_answer": "a man named Bob"
                 },
