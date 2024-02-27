@@ -15,6 +15,7 @@ from fore.foresight.utils import convert_to_pandas_dataframe
 GenerateFnT = Callable[[str], InferenceOutput]
 
 GATEWAY_URL = "https://foresight-gateway.foreai.co"
+UI_URL = "https://foresight.foreai.co"
 
 
 class Foresight:
@@ -23,9 +24,11 @@ class Foresight:
     def __init__(self,
                  api_token: str,
                  api_url: str = GATEWAY_URL,
+                 ui_url: str = UI_URL,
                  log_level: int = logging.INFO):
         self.api_token = api_token
         self.api_url = api_url
+        self.ui_url = ui_url
 
         self.timeout_seconds = 60
         logging.basicConfig(format="foresight %(levelname)s: %(message)s",
@@ -129,7 +132,8 @@ class Foresight:
             input_json=run_config.model_dump(mode="json"))
 
         if response.status_code == 200:
-            logging.info("Eval run %s created.", run_config.experiment_id)
+            logging.info("Eval run with experiment_id %s created.",
+                         run_config.experiment_id)
 
         return response
 
@@ -166,7 +170,7 @@ class Foresight:
 
         if response.status_code == 200:
             logging.info("Eval run successful."
-                         "Visit https://foresight.foreai.co to view results.")
+                         "Visit %s to view results.", self.ui_url)
 
         return response
 
