@@ -1,5 +1,6 @@
 """The main client class for the foresight API."""
 import importlib.util
+import uuid
 import logging
 from typing import Callable, Dict, List, Optional, Union
 
@@ -70,7 +71,10 @@ class Foresight:
             if reference_answers:
                 reference_answer = reference_answers[i]
             entries.append(
-                EvalsetEntry(query=query, reference_answer=reference_answer))
+                EvalsetEntry(
+                    query=query,
+                    reference_answer=reference_answer,
+                    entry_id=str(uuid.uuid4())))
         evalset = CreateEvalsetRequest(evalset_id=evalset_id,
                                        evalset_entries=entries)
 
