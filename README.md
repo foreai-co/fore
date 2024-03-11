@@ -11,7 +11,25 @@ You can sign-up as a beta tester at https://foreai.co.
     pip install fore
     ```
     Or download the repo from [GitHub](https://github.com/foreai-co/fore/) and install via `pip install .`
-2. Get started with the following lines:
+
+2.
+    - Get started with the following lines:
+    ```python
+    from fore.foresight import Foresight
+
+    foresight = Foresight(api_token="<YOUR_API_TOKEN>")
+
+    foresight.log(query="What is the easiest programming language?",
+                  response="Python",
+                  contexts=["Python rated the easiest programming language"])
+    
+    # You can add more such queries using foresight.log
+    # ....
+
+    foresight.flush()
+    ```
+
+    - Or alternatively to curate your evalsets and run regular evals against them do:
     ```python
     from fore.foresight import EvalRunConfig, Foresight, InferenceOutput, MetricType
 

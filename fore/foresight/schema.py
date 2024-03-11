@@ -131,3 +131,14 @@ class EvalRunSummary(BaseModel):
     # computed. This will periodically keep updating until all metrics for
     # all entries have been computed.
     metric_values: Optional[Dict[MetricType, float]] = None
+
+
+class LogTuple(BaseModel):
+    """The unit payload for a LogRequest."""
+    query: str
+    inference_output: InferenceOutput
+
+
+class LogRequest(BaseModel):
+    """Request to log query and inference outputs."""
+    log_entries: list[LogTuple]

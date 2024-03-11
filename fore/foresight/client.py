@@ -9,7 +9,8 @@ from requests import Response
 
 from fore.foresight.schema import (CreateEvalsetRequest, EvalRunConfig,
                                    EvalRunDetails, EvalRunEntry, EvalsetEntry,
-                                   EvalsetMetadata, InferenceOutput, MetricType,
+                                   EvalsetMetadata, InferenceOutput,
+                                   LogRequest, LogTuple, MetricType,
                                    UploadInferenceOutputsRequest)
 from fore.foresight.utils import convert_to_pandas_dataframe
 
@@ -17,6 +18,7 @@ GenerateFnT = Callable[[str], InferenceOutput]
 
 GATEWAY_URL = "https://foresight-gateway.foreai.co"
 UI_URL = "https://foresight.foreai.co"
+MAX_ENTRIES_BEFORE_FLUSH = 10
 
 
 class Foresight:
@@ -26,12 +28,15 @@ class Foresight:
                  api_token: str,
                  api_url: str = GATEWAY_URL,
                  ui_url: str = UI_URL,
+                 max_entries_before_auto_flush: int = MAX_ENTRIES_BEFORE_FLUSH,
                  log_level: int = logging.INFO):
         self.api_token = api_token
         self.api_url = api_url
         self.ui_url = ui_url
+        self.max_entries_before_auto_flush = max_entries_before_auto_flush
 
         self.timeout_seconds = 60
+        self.log_entries = []
         logging.basicConfig(format="foresight %(levelname)s: %(message)s",
                             level=log_level)
         logging.info("Foresight client initialized")
@@ -177,6 +182,59 @@ class Foresight:
                          "Visit %s to view results.", self.ui_url)
 
         return response
+
+    def flush(self):
+        """Flush the log entries and run evals on them.
+        Currently only Groundedness evals are run on the log entries.
+
+        Returns: The HTTP response on success or raises an HTTPError on failure.
+        """
+        if not self.log_entries:
+            logging.info("No log entries to flush.")
+            return
+
+        log_request = LogRequest(log_entries=self.log_entries)
+        response = self.__make_request(
+            method="put",
+            endpoint="/api/eval/log",
+            input_json=log_request.model_dump(mode="json"))
+
+        if response.status_code == 200:
+            logging.info(
+                "Log entries flushed successfully. Visit %s to view results.",
+                self.ui_url)
+            # Clear log entries after flushing
+            self.log_entries.clear()
+        else:
+            logging.error(
+                "Flushing log entries failed with response code: %s",
+                response.status_code
+            )
+
+        return response
+
+    def log(self, query: str, response: str, contexts: list[str]) -> None:
+        """Add log entries for evaluation. This only adds the entries
+        in memory, but does not send any requests to foresight service.
+        To send the request, flush needs to be called.
+
+        If the number of entries is greater than
+        `self.max_entries_before_auto_flush`, then flushes the log entries as
+        well.
+
+        Args:
+            query: The query for evaluation.
+            response: The response from your AI system.
+            contexts: List of contexts relevant to the query.
+        """
+        inference_output = InferenceOutput(
+            generated_response=response, contexts=contexts)
+        log_entry = LogTuple(query=query, inference_output=inference_output)
+        self.log_entries.append(log_entry)
+        if len(self.log_entries) >= self.max_entries_before_auto_flush:
+            # Auto flush if the number of entries is greater than a
+            # certain threshold.
+            self.flush()
 
     def __convert_evalrun_details_to_dataframe(self, details: EvalRunDetails):
         """Converts an EvalRunDetails object to a DataFrame."""
