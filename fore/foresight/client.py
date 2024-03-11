@@ -218,8 +218,9 @@ class Foresight:
         in memory, but does not send any requests to foresight service.
         To send the request, flush needs to be called.
 
-        If the number of entries is greater than MAX_ENTRIES_BEFORE_FLUSH,
-        then flushes the log entries as well.
+        If the number of entries is greater than
+        `self.max_entries_before_auto_flush`, then flushes the log entries as
+        well.
 
         Args:
             query: The query for evaluation.
