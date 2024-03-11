@@ -7,7 +7,7 @@ import pandas as pd
 
 from fore.foresight.client import Foresight
 from fore.foresight.schema import (EvalRunConfig, EvalRunDetails, EvalsetMetadata,
-                                   InferenceOutput, MetricType)
+                                   InferenceOutput, LogTuple, MetricType)
 
 TEST_TOKEN = "VERY_SECRET_TOKEN"
 TEST_URL = "http://foresight:8010"
@@ -236,6 +236,80 @@ class TestForeSight(unittest.TestCase):
                 }
             },
             timeout=TEST_TIMEOUT)
+
+    def test_log_adds_entries(self):
+        """Tests for adding log entries."""
+        query1 = "test_query1"
+        llm_response1 = "test_response1"
+        contexts1 = ["context1", "context2"]
+
+        query2 = "test_query2"
+        llm_response2 = "test_response2"
+        contexts2 = ["context3", "context4"]
+
+        self.client.log(query1, llm_response1, contexts1)
+        self.client.log(query2, llm_response2, contexts2)
+
+        self.assertEqual(len(self.client.log_entries), 2)
+        self.assertListEqual(
+            self.client.log_entries,
+            [LogTuple(
+                query="test_query1",
+                inference_output=InferenceOutput(
+                    generated_response="test_response1",
+                    contexts=["context1", "context2"])),
+             LogTuple(
+                query="test_query2",
+                inference_output=InferenceOutput(
+                    generated_response="test_response2",
+                    contexts=["context3", "context4"]))])
+
+    @patch("requests.request")
+    def test_flush_sends_request_and_clears_entries(self, mock_request):
+        """Tests for flushing log entries."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_request.return_value = mock_response
+
+        # Add some log entries
+        self.client.log("query1", "response1", ["context1"])
+        self.client.log("query2", "response2", ["context2"])
+
+        response = self.client.flush()
+        mock_request.assert_called_with(
+            method="put",
+            url=f"{TEST_URL}/api/eval/log",
+            headers={"Authorization": f"Bearer {TEST_TOKEN}"},
+            params=None,
+            json={
+                "log_entries": [
+                    {
+                        "query": "query1",
+                        "inference_output": {
+                            "generated_response": "response1",
+                            "source_docids": None,
+                            "contexts": ["context1"],
+                            "debug_info": None
+                        }
+                    },
+                    {
+                        "query": "query2",
+                        "inference_output": {
+                            "generated_response": "response2",
+                            "source_docids": None,
+                            "contexts": ["context2"],
+                            "debug_info": None
+                        }
+                    }
+                ]
+            },
+            timeout=TEST_TIMEOUT)
+
+        # Assert that log_entries is empty after flushing
+        self.assertEqual(len(self.client.log_entries), 0)
+
+        # Assert the response from flush
+        self.assertEqual(response.status_code, 200)
 
     @staticmethod
     def get_evalrun_details_sample(
