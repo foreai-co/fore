@@ -57,11 +57,6 @@ You can sign-up as a beta tester at https://foreai.co.
     foresight.generate_answers_and_run_eval(my_generate_fn, run_config)
     ```
 
-
-    
-
-
-
 ## Metrics
 
 ### Groundedness
