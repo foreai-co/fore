@@ -12,13 +12,16 @@ from fore.foresight.schema import (EvalRunConfig, EvalRunDetails, EvalsetMetadat
 TEST_TOKEN = "VERY_SECRET_TOKEN"
 TEST_URL = "http://foresight:8010"
 TEST_TIMEOUT = 1
+MAX_ENTRIES_BEFORE_FLUSH = 2
 
 
 class TestForeSight(unittest.TestCase):
     """Tests for the client class."""
 
     def setUp(self):
-        self.client = Foresight(api_token=TEST_TOKEN, api_url=TEST_URL)
+        self.client = Foresight(
+            api_token=TEST_TOKEN, api_url=TEST_URL,
+            max_entries_before_auto_flush=MAX_ENTRIES_BEFORE_FLUSH)
         self.client.timeout_seconds = TEST_TIMEOUT
 
     @patch("uuid.uuid4")
@@ -237,8 +240,13 @@ class TestForeSight(unittest.TestCase):
             },
             timeout=TEST_TIMEOUT)
 
-    def test_log_adds_entries(self):
+    @patch("requests.request")
+    def test_log_adds_entries(self, mock_request):
         """Tests for adding log entries."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_request.return_value = mock_response
+
         query1 = "test_query1"
         llm_response1 = "test_response1"
         contexts1 = ["context1", "context2"]
@@ -247,22 +255,51 @@ class TestForeSight(unittest.TestCase):
         llm_response2 = "test_response2"
         contexts2 = ["context3", "context4"]
 
+        query3 = "test_query3"
+        llm_response3 = "test_response3"
+        contexts3 = ["context5", "context6"]
+
         self.client.log(query1, llm_response1, contexts1)
         self.client.log(query2, llm_response2, contexts2)
+        self.client.log(query3, llm_response3, contexts3)
 
-        self.assertEqual(len(self.client.log_entries), 2)
+        mock_request.assert_called_with(
+            method="put",
+            url=f"{TEST_URL}/api/eval/log",
+            headers={"Authorization": f"Bearer {TEST_TOKEN}"},
+            params=None,
+            json={
+                "log_entries": [
+                    {
+                        "query": "test_query1",
+                        "inference_output": {
+                            "generated_response": "test_response1",
+                            "source_docids": None,
+                            "contexts": ["context1", "context2"],
+                            "debug_info": None
+                        }
+                    },
+                    {
+                        "query": "test_query2",
+                        "inference_output": {
+                            "generated_response": "test_response2",
+                            "source_docids": None,
+                            "contexts": ["context3", "context4"],
+                            "debug_info": None
+                        }
+                    }
+                ]
+            },
+            timeout=TEST_TIMEOUT)
+
+        self.assertEqual(len(self.client.log_entries), 1)
         self.assertListEqual(
             self.client.log_entries,
             [LogTuple(
-                query="test_query1",
+                query="test_query3",
                 inference_output=InferenceOutput(
-                    generated_response="test_response1",
-                    contexts=["context1", "context2"])),
-             LogTuple(
-                query="test_query2",
-                inference_output=InferenceOutput(
-                    generated_response="test_response2",
-                    contexts=["context3", "context4"]))])
+                    generated_response="test_response3",
+                    contexts=["context5", "context6"]))])
 
     @patch("requests.request")
     def test_flush_sends_request_and_clears_entries(self, mock_request):
@@ -272,8 +309,7 @@ class TestForeSight(unittest.TestCase):
         mock_request.return_value = mock_response
 
         # Add some log entries
-        self.client.log("query1", "response1", ["context1"])
-        self.client.log("query2", "response2", ["context2"])
+        self.client.log("test_query1", "test_response1", ["context1"])
 
         response = self.client.flush()
         mock_request.assert_called_with(
@@ -284,20 +320,11 @@ class TestForeSight(unittest.TestCase):
             json={
                 "log_entries": [
                     {
-                        "query": "query1",
+                        "query": "test_query1",
                         "inference_output": {
-                            "generated_response": "response1",
+                            "generated_response": "test_response1",
                             "source_docids": None,
                             "contexts": ["context1"],
-                            "debug_info": None
-                        }
-                    },
-                    {
-                        "query": "query2",
-                        "inference_output": {
-                            "generated_response": "response2",
-                            "source_docids": None,
-                            "contexts": ["context2"],
                             "debug_info": None
                         }
                     }
