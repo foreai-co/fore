@@ -213,7 +213,8 @@ class Foresight:
 
         if response.status_code == 200:
             logging.info(
-                "Log entries flushed successfully. Visit %s to view results.", self.ui_url)
+                "Log entries flushed successfully. Visit %s to view results.",
+                self.ui_url)
 
         # Clear log entries after flushing
         self.log_entries.clear()
