@@ -56,6 +56,9 @@ class Foresight:
             json=input_json,
             timeout=self.timeout_seconds)
 
+        if response.status_code != 200:
+            logging.error(response.json())
+
         response.raise_for_status()
 
         return response
