@@ -22,7 +22,7 @@ class EvalsetMetadata(BaseModel):
 
 class Evalsets(BaseModel):
     """Metadata for all evalsets."""
-    entries: list[EvalsetMetadata]
+    entries: List[EvalsetMetadata]
 
 
 class EvalsetEntry(EvalsetQATuple):
@@ -36,7 +36,7 @@ class EvalsetEntry(EvalsetQATuple):
 class Evalset(BaseModel):
     "A stored evalset."
     evalset_id: str
-    entries: list[EvalsetEntry]
+    entries: List[EvalsetEntry]
 
 
 class InferenceOutput(BaseModel):
