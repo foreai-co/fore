@@ -20,6 +20,7 @@ GenerateFnT = Callable[[str], InferenceOutput]
 GATEWAY_URL = "https://foresight-gateway.foreai.co"
 UI_URL = "https://foresight.foreai.co"
 MAX_ENTRIES_BEFORE_FLUSH = 10
+DEFAULT_TAG_NAME = "default"
 
 
 class Foresight:
@@ -203,7 +204,7 @@ class Foresight:
         for tag, log_entries in self.tag_to_log_entries.items():
             log_request = LogRequest(
                 log_entries=log_entries,
-                tag=(tag if tag != "default" else None))
+                tag=(tag if tag != DEFAULT_TAG_NAME else None))
             response = self.__make_request(
                 method="put",
                 endpoint="/api/eval/log",
@@ -249,7 +250,7 @@ class Foresight:
         inference_output = InferenceOutput(
             generated_response=response, contexts=contexts)
         log_entry = LogTuple(query=query, inference_output=inference_output)
-        tag = tag if tag else "default"
+        tag = tag if tag else DEFAULT_TAG_NAME
         self.tag_to_log_entries[tag].append(log_entry)
         if len(self.tag_to_log_entries[tag]) >= self.max_entries_before_auto_flush:
             # Auto flush if the number of entries for any tag is greater than a
