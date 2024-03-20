@@ -295,7 +295,7 @@ class TestForeSight(unittest.TestCase):
                             }
                         }
                     ],
-                    "tag": None
+                    "experiment_id_prefix": None
                 },
                 timeout=TEST_TIMEOUT
             ),
@@ -316,7 +316,7 @@ class TestForeSight(unittest.TestCase):
                             }
                         },
                     ],
-                    "tag": "great_model"
+                    "experiment_id_prefix": "great_model"
                 },
                 timeout=TEST_TIMEOUT
             )
@@ -368,7 +368,7 @@ class TestForeSight(unittest.TestCase):
                             }
                         }
                     ],
-                    "tag": None
+                    "experiment_id_prefix": None
                 },
                 timeout=TEST_TIMEOUT
             ),
@@ -389,7 +389,7 @@ class TestForeSight(unittest.TestCase):
                             }
                         },
                     ],
-                    "tag": "great_model"
+                    "experiment_id_prefix": "great_model"
                 },
                 timeout=TEST_TIMEOUT
             )
