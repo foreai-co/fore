@@ -146,4 +146,4 @@ class LogRequest(BaseModel):
     # name of the eval run (experiment_id).
     # The complete eval run experiment_id will be of the form:
     #   "great-model-v01_logs_groundedness_YYYYMMDD"
-    tag: str | None = None
+    experiment_id_prefix: str | None = None

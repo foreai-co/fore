@@ -204,7 +204,8 @@ class Foresight:
         for tag, log_entries in self.tag_to_log_entries.items():
             log_request = LogRequest(
                 log_entries=log_entries,
-                tag=(tag if tag != DEFAULT_TAG_NAME else None))
+                experiment_id_prefix=(
+                    tag if tag != DEFAULT_TAG_NAME else None))
             response = self.__make_request(
                 method="put",
                 endpoint="/api/eval/log",
@@ -212,7 +213,7 @@ class Foresight:
 
             if response.status_code == 200:
                 logging.info(
-                    "Log entries flushed successfully for %s."
+                    "Log entries flushed successfully for %s tag."
                     " Visit %s to view results.",
                     tag, self.ui_url)
                 # Clear log entries after flushing
