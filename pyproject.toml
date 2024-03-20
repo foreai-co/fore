@@ -1,6 +1,6 @@
 [project]
 name = "fore"
-version = "0.1.3"
+version = "0.1.4"
 readme = "README.md"
 authors = [
     { name = "fore ai", email = "info@foreai.co" }
