@@ -253,7 +253,7 @@ class Foresight:
         tag = tag if tag else DEFAULT_TAG_NAME
         entries_for_tag = self.tag_to_log_entries[tag]
         entries_for_tag.append(log_entry)
-        if (len(entries_for_tag) >= self.max_entries_before_auto_flush):
+        if len(entries_for_tag) >= self.max_entries_before_auto_flush:
             # Auto flush if the number of entries for any tag is greater than a
             # certain threshold.
             self.flush()
