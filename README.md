@@ -21,7 +21,8 @@ You can sign-up as a beta tester at https://foreai.co.
 
     foresight.log(query="What is the easiest programming language?",
                   response="Python",
-                  contexts=["Python rated the easiest programming language"])
+                  contexts=["Python rated the easiest programming language"],
+                  tag="my_awesome_experiment")
     
     # You can add more such queries using foresight.log
     # ....
