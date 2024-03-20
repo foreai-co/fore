@@ -1,7 +1,7 @@
 """Tests for the client class."""
 import unittest
 from typing import Any, Dict
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 import pandas as pd
 
@@ -259,47 +259,83 @@ class TestForeSight(unittest.TestCase):
         llm_response3 = "test_response3"
         contexts3 = ["context5", "context6"]
 
+        query4 = "test_query4"
+        llm_response4 = "test_response4"
+        contexts4 = ["context7", "context8"]
+
         self.client.log(query1, llm_response1, contexts1)
+        self.client.log(query4, llm_response4, contexts4, tag="great_model")
         self.client.log(query2, llm_response2, contexts2)
         self.client.log(query3, llm_response3, contexts3)
 
-        mock_request.assert_called_with(
-            method="put",
-            url=f"{TEST_URL}/api/eval/log",
-            headers={"Authorization": f"Bearer {TEST_TOKEN}"},
-            params=None,
-            json={
-                "log_entries": [
-                    {
-                        "query": "test_query1",
-                        "inference_output": {
-                            "generated_response": "test_response1",
-                            "source_docids": None,
-                            "contexts": ["context1", "context2"],
-                            "debug_info": None
+        expected_calls = [
+            call(
+                method="put",
+                url=f"{TEST_URL}/api/eval/log",
+                headers={"Authorization": f"Bearer {TEST_TOKEN}"},
+                params=None,
+                json={
+                    "log_entries": [
+                        {
+                            "query": "test_query1",
+                            "inference_output": {
+                                "generated_response": "test_response1",
+                                "source_docids": None,
+                                "contexts": ["context1", "context2"],
+                                "debug_info": None
+                            }
+                        },
+                        {
+                            "query": "test_query2",
+                            "inference_output": {
+                                "generated_response": "test_response2",
+                                "source_docids": None,
+                                "contexts": ["context3", "context4"],
+                                "debug_info": None
+                            }
                         }
-                    },
-                    {
-                        "query": "test_query2",
-                        "inference_output": {
-                            "generated_response": "test_response2",
-                            "source_docids": None,
-                            "contexts": ["context3", "context4"],
-                            "debug_info": None
-                        }
-                    }
-                ]
-            },
-            timeout=TEST_TIMEOUT)
+                    ],
+                    "tag": None
+                },
+                timeout=TEST_TIMEOUT
+            ),
+            call(
+                method="put",
+                url=f"{TEST_URL}/api/eval/log",
+                headers={"Authorization": f"Bearer {TEST_TOKEN}"},
+                params=None,
+                json={
+                    "log_entries": [
+                        {
+                            "query": "test_query4",
+                            "inference_output": {
+                                "generated_response": "test_response4",
+                                "source_docids": None,
+                                "contexts": ["context7", "context8"],
+                                "debug_info": None
+                            }
+                        },
+                    ],
+                    "tag": "great_model"
+                },
+                timeout=TEST_TIMEOUT
+            )
+        ]
 
-        self.assertEqual(len(self.client.log_entries), 1)
-        self.assertListEqual(
-            self.client.log_entries,
-            [LogTuple(
+        mock_request.assert_has_calls(expected_calls, any_order=True)
+
+        self.assertEqual(len(self.client.tag_to_log_entries), 2)
+        self.assertDictEqual(
+            self.client.tag_to_log_entries,
+            {"default":
+             [
+                 LogTuple(
                 query="test_query3",
                 inference_output=InferenceOutput(
                     generated_response="test_response3",
-                    contexts=["context5", "context6"]))])
+                    contexts=["context5", "context6"]))
+             ],
+             "great_model": []})
 
     @patch("requests.request")
     def test_flush_sends_request_and_clears_entries(self, mock_request):
@@ -308,35 +344,66 @@ class TestForeSight(unittest.TestCase):
         mock_response.status_code = 200
         mock_request.return_value = mock_response
 
-        # Add some log entries
+        # Add some log entries and flush
         self.client.log("test_query1", "test_response1", ["context1"])
-
-        response = self.client.flush()
-        mock_request.assert_called_with(
-            method="put",
-            url=f"{TEST_URL}/api/eval/log",
-            headers={"Authorization": f"Bearer {TEST_TOKEN}"},
-            params=None,
-            json={
-                "log_entries": [
-                    {
-                        "query": "test_query1",
-                        "inference_output": {
-                            "generated_response": "test_response1",
-                            "source_docids": None,
-                            "contexts": ["context1"],
-                            "debug_info": None
+        response1 = self.client.flush()
+        self.client.log("test_query2", "test_response2",
+                        ["context2"], tag="great_model")
+        response2 = self.client.flush()
+        expected_calls = [
+            call(
+                method="put",
+                url=f"{TEST_URL}/api/eval/log",
+                headers={"Authorization": f"Bearer {TEST_TOKEN}"},
+                params=None,
+                json={
+                    "log_entries": [
+                        {
+                            "query": "test_query1",
+                            "inference_output": {
+                                "generated_response": "test_response1",
+                                "source_docids": None,
+                                "contexts": ["context1"],
+                                "debug_info": None
+                            }
                         }
-                    }
-                ]
-            },
-            timeout=TEST_TIMEOUT)
+                    ],
+                    "tag": None
+                },
+                timeout=TEST_TIMEOUT
+            ),
+            call(
+                method="put",
+                url=f"{TEST_URL}/api/eval/log",
+                headers={"Authorization": f"Bearer {TEST_TOKEN}"},
+                params=None,
+                json={
+                    "log_entries": [
+                        {
+                            "query": "test_query2",
+                            "inference_output": {
+                                "generated_response": "test_response2",
+                                "source_docids": None,
+                                "contexts": ["context2"],
+                                "debug_info": None
+                            }
+                        },
+                    ],
+                    "tag": "great_model"
+                },
+                timeout=TEST_TIMEOUT
+            )
+        ]
+
+        mock_request.assert_has_calls(expected_calls, any_order=True)
 
         # Assert that log_entries is empty after flushing
-        self.assertEqual(len(self.client.log_entries), 0)
+        self.assertDictEqual(
+            self.client.tag_to_log_entries, {"default": [], "great_model": []})
 
         # Assert the response from flush
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response1.status_code, 200)
+        self.assertEqual(response2.status_code, 200)
 
     @staticmethod
     def get_evalrun_details_sample(

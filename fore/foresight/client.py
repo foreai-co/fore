@@ -1,4 +1,5 @@
 """The main client class for the foresight API."""
+from collections import defaultdict
 import importlib.util
 import uuid
 import logging
@@ -19,6 +20,7 @@ GenerateFnT = Callable[[str], InferenceOutput]
 GATEWAY_URL = "https://foresight-gateway.foreai.co"
 UI_URL = "https://foresight.foreai.co"
 MAX_ENTRIES_BEFORE_FLUSH = 10
+DEFAULT_TAG_NAME = "default"
 
 
 class Foresight:
@@ -36,7 +38,7 @@ class Foresight:
         self.max_entries_before_auto_flush = max_entries_before_auto_flush
 
         self.timeout_seconds = 60
-        self.log_entries = []
+        self.tag_to_log_entries = defaultdict(list)
         logging.basicConfig(format="foresight %(levelname)s: %(message)s",
                             level=log_level)
         logging.info("Foresight client initialized")
@@ -192,31 +194,42 @@ class Foresight:
 
         Returns: The HTTP response on success or raises an HTTPError on failure.
         """
-        if not self.log_entries:
+        has_entries_to_flush = any(
+            len(entries) > 0 for entries in self.tag_to_log_entries.values())
+
+        if not has_entries_to_flush:
             logging.info("No log entries to flush.")
             return
 
-        log_request = LogRequest(log_entries=self.log_entries)
-        response = self.__make_request(
-            method="put",
-            endpoint="/api/eval/log",
-            input_json=log_request.model_dump(mode="json"))
+        for tag, log_entries in self.tag_to_log_entries.items():
+            log_request = LogRequest(
+                log_entries=log_entries,
+                tag=(tag if tag != DEFAULT_TAG_NAME else None))
+            response = self.__make_request(
+                method="put",
+                endpoint="/api/eval/log",
+                input_json=log_request.model_dump(mode="json"))
 
-        if response.status_code == 200:
-            logging.info(
-                "Log entries flushed successfully. Visit %s to view results.",
-                self.ui_url)
-            # Clear log entries after flushing
-            self.log_entries.clear()
-        else:
-            logging.error(
-                "Flushing log entries failed with response code: %s",
-                response.status_code
-            )
+            if response.status_code == 200:
+                logging.info(
+                    "Log entries flushed successfully for %s."
+                    " Visit %s to view results.",
+                    tag, self.ui_url)
+                # Clear log entries after flushing
+                log_entries.clear()
+            else:
+                logging.error(
+                    "Flushing log entries failed with response code: %s",
+                    response.status_code
+                )
 
         return response
 
-    def log(self, query: str, response: str, contexts: list[str]) -> None:
+    def log(self,
+            query: str,
+            response: str,
+            contexts: list[str],
+            tag: str | None = None) -> None:
         """Add log entries for evaluation. This only adds the entries
         in memory, but does not send any requests to foresight service.
         To send the request, flush needs to be called.
@@ -229,13 +242,19 @@ class Foresight:
             query: The query for evaluation.
             response: The response from your AI system.
             contexts: List of contexts relevant to the query.
+            tag: An optional tag for the request. e.g. "great-model-v01".
+                This will be prepended to the name of the eval run
+                (experiment_id). The complete eval run experiment_id will be
+                of the form: "great-model-v01_logs_groundedness_YYYYMMDD"
         """
         inference_output = InferenceOutput(
             generated_response=response, contexts=contexts)
         log_entry = LogTuple(query=query, inference_output=inference_output)
-        self.log_entries.append(log_entry)
-        if len(self.log_entries) >= self.max_entries_before_auto_flush:
-            # Auto flush if the number of entries is greater than a
+        tag = tag if tag else DEFAULT_TAG_NAME
+        entries_for_tag = self.tag_to_log_entries[tag]
+        entries_for_tag.append(log_entry)
+        if len(entries_for_tag) >= self.max_entries_before_auto_flush:
+            # Auto flush if the number of entries for any tag is greater than a
             # certain threshold.
             self.flush()
 
