@@ -251,8 +251,9 @@ class Foresight:
             generated_response=response, contexts=contexts)
         log_entry = LogTuple(query=query, inference_output=inference_output)
         tag = tag if tag else DEFAULT_TAG_NAME
-        self.tag_to_log_entries[tag].append(log_entry)
-        if len(self.tag_to_log_entries[tag]) >= self.max_entries_before_auto_flush:
+        entries_for_tag = self.tag_to_log_entries[tag]
+        entries_for_tag.append(log_entry)
+        if (len(entries_for_tag) >= self.max_entries_before_auto_flush):
             # Auto flush if the number of entries for any tag is greater than a
             # certain threshold.
             self.flush()

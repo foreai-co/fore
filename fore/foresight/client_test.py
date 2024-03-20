@@ -395,9 +395,11 @@ class TestForeSight(unittest.TestCase):
             )
         ]
 
+        mock_request.assert_has_calls(expected_calls, any_order=True)
+
         # Assert that log_entries is empty after flushing
         self.assertDictEqual(
-            self.client.tag_to_log_entries, {"default": [], 'great_model': []})
+            self.client.tag_to_log_entries, {"default": [], "great_model": []})
 
         # Assert the response from flush
         self.assertEqual(response1.status_code, 200)
