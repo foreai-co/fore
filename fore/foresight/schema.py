@@ -142,3 +142,8 @@ class LogTuple(BaseModel):
 class LogRequest(BaseModel):
     """Request to log query and inference outputs."""
     log_entries: list[LogTuple]
+    # e.g. "great-model-v01". This will be prepended to the
+    # name of the eval run (experiment_id).
+    # The complete eval run experiment_id will be of the form:
+    #   "great-model-v01_logs_groundedness_YYYYMMDD"
+    tag: str | None = None
