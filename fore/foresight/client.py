@@ -10,8 +10,8 @@ from requests import Response
 
 from fore.foresight.schema import (CreateEvalsetRequest, EvalRunConfig,
                                    EvalRunDetails, EvalRunEntry, EvalsetEntry,
-                                   EvalsetMetadata, InferenceOutput,
-                                   LogRequest, LogTuple, MetricType,
+                                   EvalsetMetadata, InferenceOutput, LogRequest,
+                                   LogTuple, MetricType,
                                    UploadInferenceOutputsRequest)
 from fore.foresight.utils import convert_to_pandas_dataframe
 
@@ -88,10 +88,9 @@ class Foresight:
             if reference_answers:
                 reference_answer = reference_answers[i]
             entries.append(
-                EvalsetEntry(
-                    query=query,
-                    reference_answer=reference_answer,
-                    entry_id=str(uuid.uuid4())))
+                EvalsetEntry(query=query,
+                             reference_answer=reference_answer,
+                             entry_id=str(uuid.uuid4())))
         evalset = CreateEvalsetRequest(evalset_id=evalset_id,
                                        evalset_entries=entries)
 
@@ -151,8 +150,10 @@ class Foresight:
 
         return response
 
-    def generate_answers_and_run_eval(self, generate_fn: GenerateFnT,
-                                      run_config: EvalRunConfig) -> Response:
+    def generate_answers_and_run_eval(self,
+                                      generate_fn: GenerateFnT,
+                                      run_config: EvalRunConfig,
+                                      batch_size=10):
         """Creates an eval run entry, generates answers and runs the eval.
 
         This method calls the generate_fn on each query in the evalset, triggers
@@ -162,31 +163,45 @@ class Foresight:
             generate_fn: A function that takes a query and returns an
                 InferenceOutput.
             run_config: The configuration for running the eval.
-
-        Returns: the HTTP response on success or raises an HTTPError on failure.
+            batch_size: The max number of inference outputs to upload in one
+                batch.
         """
         self.create_evalrun(run_config=run_config)
         experiment_id = run_config.experiment_id
         queries = self.get_evalrun_queries(experiment_id=experiment_id)
+
+        if not queries:
+            logging.error("No queries found for experiment_id: %s",
+                          experiment_id)
+            return
 
         outputs = {}
         for entry_id, query in queries.items():
             inference_output = generate_fn(query)
             outputs[entry_id] = inference_output
 
-        outputs = UploadInferenceOutputsRequest(
-            experiment_id=experiment_id, entry_id_to_inference_output=outputs)
+        for i in range(0, len(outputs), batch_size):
+            outputs_chunk = {
+                k: outputs[k] for k in list(outputs.keys())[i:i + batch_size]
+            }
+            output_request = UploadInferenceOutputsRequest(
+                experiment_id=experiment_id,
+                entry_id_to_inference_output=outputs_chunk)
 
-        response = self.__make_request(
-            method="put",
-            endpoint="/api/eval/run/entries",
-            input_json=outputs.model_dump(mode="json"))
+            res = self.__make_request(
+                method="put",
+                endpoint="/api/eval/run/entries",
+                input_json=output_request.model_dump(mode="json"))
 
-        if response.status_code == 200:
-            logging.info("Eval run successful."
-                         "Visit %s to view results.", self.ui_url)
+            if res.status_code != 200:
+                logging.error(
+                    "Error uploading inference outputs for experiment_id: %s",
+                    experiment_id)
+                return
 
-        return response
+        logging.info(
+            "Eval run started successfully."
+            "Visit %s to view results.", self.ui_url)
 
     def flush(self):
         """Flush the log entries and run evals on them.
@@ -204,8 +219,7 @@ class Foresight:
         for tag, log_entries in self.tag_to_log_entries.items():
             log_request = LogRequest(
                 log_entries=log_entries,
-                experiment_id_prefix=(
-                    tag if tag != DEFAULT_TAG_NAME else None))
+                experiment_id_prefix=(tag if tag != DEFAULT_TAG_NAME else None))
             response = self.__make_request(
                 method="put",
                 endpoint="/api/eval/log",
@@ -214,15 +228,13 @@ class Foresight:
             if response.status_code == 200:
                 logging.info(
                     "Log entries flushed successfully for %s tag."
-                    " Visit %s to view results.",
-                    tag, self.ui_url)
+                    " Visit %s to view results.", tag, self.ui_url)
                 # Clear log entries after flushing
                 log_entries.clear()
             else:
                 logging.error(
                     "Flushing log entries failed with response code: %s",
-                    response.status_code
-                )
+                    response.status_code)
 
         return response
 
@@ -248,8 +260,8 @@ class Foresight:
                 (experiment_id). The complete eval run experiment_id will be
                 of the form: "great-model-v01_logs_groundedness_YYYYMMDD"
         """
-        inference_output = InferenceOutput(
-            generated_response=response, contexts=contexts)
+        inference_output = InferenceOutput(generated_response=response,
+                                           contexts=contexts)
         log_entry = LogTuple(query=query, inference_output=inference_output)
         tag = tag if tag else DEFAULT_TAG_NAME
         entries_for_tag = self.tag_to_log_entries[tag]
