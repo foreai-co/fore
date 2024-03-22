@@ -271,7 +271,6 @@ class TestForeSight(unittest.TestCase):
                                      metadata={"my_key": "my_value"}),
             batch_size=1)
 
-        print("WTF", mock_request.call_args_list[1:])
         # Skip the first request that creates the evalrun.
         self.assertSequenceEqual(mock_request.call_args_list[1:], [
             call(method="put",
