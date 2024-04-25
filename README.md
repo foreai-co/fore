@@ -4,6 +4,7 @@ The foresight library within fore SDK allows you to easily evaluate the
 performance of your LLM system based on a variety of metrics.
 
 You can sign-up and get started immediately at https://foresight.foreai.co.
+
 Check our documentation at https://docs.foreai.co.
 
 ## Quick start
