@@ -5,7 +5,7 @@ performance of your LLM system based on a variety of metrics.
 
 You can sign-up and get started immediately at https://foresight.foreai.co.
 
-Check our documentation at https://docs.foreai.co/
+Check our documentation at https://docs.foreai.co
 
 ## Quick start
 1.  Install the package using `pip`:
