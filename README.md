@@ -61,38 +61,69 @@ You can sign-up as a beta tester at https://foreai.co.
 ## Metrics
 
 ### Groundedness
+The metric answers the question: **Is the response based on the context and 
+nothing else?**. It measures whether the response is consistent with and can be
+implied from the context ("are entailed"). It doesn't need to be semantcially
+equivalent to the context.
+
 Depends on:
 - LLM's generated response;
 - Context used for generating the answer.
 
-The metric answers the question: **Is the response based on the context and 
-nothing else?**
-
-This metric estimates the fraction of facts in the generated response that can 
-be found in the provided context.
+This metric score is between 0 and 1 and estimates the fraction of facts in the
+candidate response that are grounded in the provided context (are entailed by
+the context).
 
 Example:
 - **Context**: *The front door code has been changed from 1234 to 7945 due to 
 security reasons.*
-- **Q**: *What is the current front door code?*
-- **A1**: *7945.* `[groundedness score = 0.9]`
-- **A2**: *0000.* `[groundedness score = 0.0]`
-- **A3**: *1234.* `[groundedness score = 0.04]`
-
-### Similarity
-Depends on:
-- LLM's generated response;
-- A reference response to compare the generated response with.
-
-The metric answers the question: **Is the generated response semantically equivalent 
-to the reference response?**
+- **Question**: *What is the current front door code?*
+- **Response 1**: *7945.* `[groundedness score = 1.0]`
+- **Response 2**: *0000.* `[groundedness score = 0.0]`
+- **Response 3**: *1234.* `[groundedness score = 0.0]`
+- **Response 4**: *The code has been changed due to security reasons.* `[groundedness score = 1.0]` (100% grounded, even if not answering the question)
 
 Example:
-- **Question**: *Is Python an easy programming language to learn?*
-- **Reference response**: *Python is an easy programming language to learn*
-- **Response 1**: *It is easy to be proficient in python*  `[similarity score = 0.72]`
-- **Response 2**: *Python is widely recognized for its simplicity.* `[similarity score = 0.59]`
-- **Response 3**: *Python is not an easy programming language to learn* `[similarity score = 0.0]`
+- **Context**: *Albert Einstein, (14 March 1879 - 18 April 1955) was a German-born theoretical physicist. In 1905, sometimes described as his annus mirabilis (miracle year), Einstein published four groundbreaking papers.*
+- **Question**: *Where was Einstein born and how old did he get?*
+- **Response 1**: *He was 76 years old when he died and he was born in Germany.* `[groundedness score = 1.0]`
+- **Response 2**: *He was 50 years old when he died and he was born in Germany.* `[groundedness score = 0.5]` (Age is wrong, country is correct)
+- **Response 3**: *He was born in Europe and was more than 60 years old when he died.* `[groundedness score = 1.0]` (Entailed in context.)
+- 
+### Similarity
+The metric answers the question: **Is the generated response factually equivalent 
+to the reference response?**
+
+Depends on:
+- A user query;
+- An LLM's generated response to be evaluated;
+- A reference response to compare the generated response with.
+
+The metric score (range from 0 to 1) represents the ratio of the facts that are present in both the reference and the generated response (facts, the reference and generated responses agree on), divided by the maximum number of facts in any of the responses. See examples below for more intuition.
+
+Example (multi-statement):
+- **Question**: *What is the capital of France, and what is the primary language spoken there?*
+- **Reference response**: *The capital of France is Paris, and the primary spoken language is French.*
+- **Response 1**: *Paris is the capital of France, and the most spoken language is French.* `[similarity score = 1.0]`
+- **Response 2**: *The capital of France is Paris.* `[similarity score = 0.5]` (the second statement is missing from the generated response)
+- **Response 3**: *The capital of France is Paris, and the most spoken language is English.* `[similarity score = 0.5]` (language statement mismatch)
+
+Example (multi-statement):
+- **Question**: *What fruits does Amy like?*
+- **Reference response**: *Amy likes apples and bananas.*
+- **Response**: *Amy likes apples, berries and plums.* `[similarity score = 0.33]` (one matched fact and two mismatched ones)
+
+Example:
+- **Question**: *What is the age of Archie White, the oldest new graduate in Britain as of July 16, 2021?*
+- **Reference response**: *96 years old.*
+- **Response 1**: *Archie White's age is 96.*  `[similarity score = 1.0]`
+- **Response 2**: *He is 96.* `[similarity score = 1.0]`
+- **Response 3**: *He is more than 95 years old.* `[similarity score = 0.0]` (while true, it's not semantically equivalent to the reference response)
+
+Example:
+- **Question**: *What cars does Alex like?*
+- **Reference response**: *Alex likes blue cars.*
+- **Response**: *Alex likes all cars.* `[similarity score = 0.0]` (the statement is similar but not equivalent to the reference response)
 
 ### Relevance (coming soon)
 Depends on:
