@@ -490,6 +490,9 @@ class TestForeSight(unittest.TestCase):
             "reference_answer": {
                 0: "a man named Bob"
             },
+            "reference_answer_facts": {
+                0: ["a man named Bob exists."]
+            },
             "generated_answer": {
                 0: "Bob"
             },
@@ -542,6 +545,9 @@ class TestForeSight(unittest.TestCase):
             },
             "reference_answer": {
                 0: "a man named Bob"
+            },
+            "reference_answer_facts": {
+                0: ["a man named Bob exists."]
             },
             "generated_answer": {
                 0: "Bob"

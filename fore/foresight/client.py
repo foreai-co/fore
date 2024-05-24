@@ -10,8 +10,8 @@ from requests import Response
 
 from fore.foresight.schema import (CreateEvalsetRequest, EvalRunConfig,
                                    EvalRunDetails, EvalRunEntry, EvalsetEntry,
-                                   EvalsetMetadata, InferenceOutput,
-                                   LogRequest, LogTuple, MetricType,
+                                   EvalsetMetadata, InferenceOutput, LogRequest,
+                                   LogTuple, MetricType,
                                    UploadInferenceOutputsRequest)
 from fore.foresight.utils import convert_to_pandas_dataframe
 
@@ -271,11 +271,12 @@ class Foresight:
             # certain threshold.
             self.flush()
 
-    def __convert_evalrun_details_to_dataframe(self, details: EvalRunDetails):
+    def _convert_evalrun_details_to_dataframe(self, details: EvalRunDetails):
         """Converts an EvalRunDetails object to a DataFrame."""
         df = {
             "query": [],
             "reference_answer": [],
+            "reference_answer_facts": [],
             "generated_answer": [],
             "source_docids": [],
             "contexts": [],
@@ -289,6 +290,8 @@ class Foresight:
         for entry in details.entries:
             df["query"].append(entry.input.query)
             df["reference_answer"].append(entry.input.reference_answer)
+            df["reference_answer_facts"].append(
+                entry.input.reference_answer_facts)
             df["generated_answer"].append(entry.output.generated_response)
             df["source_docids"].append(entry.output.source_docids)
             df["contexts"].append(entry.output.contexts)
@@ -338,6 +341,6 @@ class Foresight:
                 return details
 
             # Build a DataFrame from the response.
-            return self.__convert_evalrun_details_to_dataframe(details)
+            return self._convert_evalrun_details_to_dataframe(details)
 
         return details
