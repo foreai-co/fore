@@ -533,6 +533,9 @@ class TestForeSight(unittest.TestCase):
             },
             "similarity": {
                 0: 0.8
+            },
+            "reference_fact_recall": {
+                0: None
             }
         }
 
@@ -582,6 +585,9 @@ class TestForeSight(unittest.TestCase):
                 0: None
             },
             "similarity": {
+                0: None
+            },
+            "reference_fact_recall": {
                 0: None
             }
         }
