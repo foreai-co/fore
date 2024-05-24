@@ -87,17 +87,17 @@ class Foresight:
             reference_answer = None
             if reference_answers:
                 reference_answer = reference_answers[i]
-            entries.append(
-                EvalsetEntry(query=query,
-                             reference_answer=reference_answer,
-                             entry_id=str(uuid.uuid4())))
+            entries.append(EvalsetEntry(query=query,
+                                        entry_id=str(uuid.uuid4())))
+            if reference_answer:
+                entries[-1].reference_answer = reference_answer
         evalset = CreateEvalsetRequest(evalset_id=evalset_id,
                                        evalset_entries=entries)
 
-        response = self.__make_request(
-            method="post",
-            endpoint="/api/eval/set",
-            input_json=evalset.model_dump(mode="json"))
+        response = self.__make_request(method="post",
+                                       endpoint="/api/eval/set",
+                                       input_json=evalset.model_dump(
+                                           mode="json", exclude_unset=True))
 
         return EvalsetMetadata(**response.json())
 
@@ -139,10 +139,10 @@ class Foresight:
 
         Returns: the HTTP response on success or raises an HTTPError on failure.
         """
-        response = self.__make_request(
-            method="post",
-            endpoint="/api/eval/run",
-            input_json=run_config.model_dump(mode="json"))
+        response = self.__make_request(method="post",
+                                       endpoint="/api/eval/run",
+                                       input_json=run_config.model_dump(
+                                           mode="json", exclude_unset=True))
 
         if response.status_code == 200:
             logging.info("Eval run with experiment_id %s created.",
@@ -188,10 +188,10 @@ class Foresight:
                 experiment_id=experiment_id,
                 entry_id_to_inference_output=outputs_chunk)
 
-            res = self.__make_request(
-                method="put",
-                endpoint="/api/eval/run/entries",
-                input_json=output_request.model_dump(mode="json"))
+            res = self.__make_request(method="put",
+                                      endpoint="/api/eval/run/entries",
+                                      input_json=output_request.model_dump(
+                                          mode="json", exclude_unset=True))
 
             if res.status_code != 200:
                 logging.error(
@@ -217,13 +217,13 @@ class Foresight:
             return
 
         for tag, log_entries in self.tag_to_log_entries.items():
-            log_request = LogRequest(
-                log_entries=log_entries,
-                experiment_id_prefix=(tag if tag != DEFAULT_TAG_NAME else None))
-            response = self.__make_request(
-                method="put",
-                endpoint="/api/eval/log",
-                input_json=log_request.model_dump(mode="json"))
+            log_request = LogRequest(log_entries=log_entries)
+            if tag != DEFAULT_TAG_NAME:
+                log_request.experiment_id_prefix = tag
+            response = self.__make_request(method="put",
+                                           endpoint="/api/eval/log",
+                                           input_json=log_request.model_dump(
+                                               mode="json", exclude_unset=True))
 
             if response.status_code == 200:
                 logging.info(
@@ -241,8 +241,8 @@ class Foresight:
     def log(self,
             query: str,
             response: str,
-            contexts: list[str],
-            tag: str | None = None) -> None:
+            contexts: List[str],
+            tag: Optional[str] = None) -> None:
         """Add log entries for evaluation. This only adds the entries
         in memory, but does not send any requests to foresight service.
         To send the request, flush needs to be called.
