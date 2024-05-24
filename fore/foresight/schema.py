@@ -53,7 +53,7 @@ class InferenceOutput(BaseModel):
 
 class MetricType(str, Enum):
     """Different metrics supported by the foresight eval service.
-    
+
     For details, see the following
     [doc](https://github.com/foreai-co/foresight/blob/main/README.md#metrics). 
     """
@@ -66,6 +66,8 @@ class MetricType(str, Enum):
     GROUNDEDNESS = "GROUNDEDNESS"
     # How similar is the response to the reference answer?
     SIMILARITY = "SIMILARITY"
+    # How many reference facts are entailed in the candidate answer?
+    REFERENCE_FACT_RECALL = "REFERENCE_FACT_RECALL"
 
 
 class EvalRunConfig(BaseModel):
