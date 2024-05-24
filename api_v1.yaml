@@ -1,0 +1,898 @@
+openapi: 3.0.0
+info:
+  title: User and Customer API
+  description: API for user and customer operations
+  version: 1.0.0
+paths:
+  /api/eval/set:
+    get:
+      summary: Get an evalset
+      parameters:
+        - name: evalset_id
+          in: query
+          description: evalset_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Evalset'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+        '401':
+          description: Unauthorized request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+    delete:
+      summary: Deletes an evalset
+      parameters:
+        - name: evalset_id
+          in: query
+          description: evalset_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+        '401':
+          description: Unauthorized request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+        '404':
+          description: Evalset not found request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+    post:
+      summary: Create an evalset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEvalsetRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvalsetMetadata'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+        '401':
+          description: Unauthorized request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+  /api/eval/sets:
+    get:
+      summary: Get the list of evalsets
+      parameters:
+        - name: sort_field_name
+          in: query
+          description: |
+            Column name to sort by: evalset_id, min_creation_time, num_entries
+          required: false
+          schema:
+            type: string
+        - name: sort_ascending
+          in: query
+          description: Whether to sort ascending or descending
+          required: false
+          schema:
+            type: boolean
+        - name: limit
+          in: query
+          description: Number of rows to return
+          required: false
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          description: Number of rows to skip
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Evalsets'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+        '401':
+          description: Unauthorized request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+  /api/eval/set/entry:
+    get:
+      summary: Get an evalset entry
+      parameters:
+        - name: evalset_id
+          in: query
+          description: evalset_id
+          required: true
+          schema:
+            type: string
+        - name: entry_id
+          in: query
+          description: entry_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvalsetEntry'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+        '401':
+          description: Unauthorized request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+    put:
+      summary: Edit an evalset entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PutEvalsetEntryRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Evalsets'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+        '401':
+          description: Unauthorized request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+        '404':
+          description: Entry not found request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+  /api/eval/run:
+    post:
+      summary: Create an eval run
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvalRunConfig'
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+        '401':
+          description: Unauthorized request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+    delete:
+      summary: Deletes an eval run
+      parameters:
+        - name: experiment_id
+          in: query
+          description: experiment_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+        '401':
+          description: Unauthorized request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+        '404':
+          description: Experiment not found request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+  /api/eval/run/queries:
+    get:
+      summary: Get queries for an eval run
+      description: Returns queries for a given eval run
+      parameters:
+        - name: experiment_id
+          in: query
+          description: experiment_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: An Evalset object
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+                example:
+                  entry1: query1
+                  entry2: query2
+        '401':
+          description: Unauthorized request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+  /api/eval/run/entries:
+    put:
+      summary: Upload inference outputs for an eval run
+      description: This endpoint triggers eval metric computation for the uploaded inference using the scheduler service.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadInferenceOutputsRequest'
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+        '401':
+          description: Unauthorized request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+  /api/eval/run/details:
+    get:
+      summary: Get details for an eval run
+      description: Returns details, including metrics, for a given eval run
+      parameters:
+        - name: experiment_id
+          in: query
+          description: experiment_id
+          required: true
+          schema:
+            type: string
+        - name: sort_field_name
+          in: query
+          description: |
+            Column name to sort by: metric_values.<metric_type>, input.<field_name>, output.<field_name>
+          required: false
+          schema:
+            type: string
+        - name: sort_ascending
+          in: query
+          description: Whether to sort ascending or descending
+          required: false
+          schema:
+            type: boolean
+        - name: limit
+          in: query
+          description: Number of rows to return
+          required: false
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          description: Number of rows to skip
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: An EvalRunDetails object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvalRunDetails'
+        '401':
+          description: Unauthorized request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+  /api/eval/run/entry:
+    get:
+      summary: Get the details of an eval run entry
+      description: Returns details, including metrics, for a given eval run entry
+      parameters:
+        - name: experiment_id
+          in: query
+          description: experiment_id
+          required: true
+          schema:
+            type: string
+        - name: entry_id
+          in: query
+          description: entry_id in the evalset
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvalRunEntry'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+        '401':
+          description: Unauthorized request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+  /api/eval/run/sxs:
+    get:
+      summary: Get sxs for two eval runs
+      description: Returns details, including metrics, for comparing two runs
+      parameters:
+        - name: experiment_id_left
+          in: query
+          description: experiment_id_left
+          required: true
+          schema:
+            type: string
+        - name: experiment_id_right
+          in: query
+          description: experiment_id_right
+          required: true
+          schema:
+            type: string
+        - name: metric_type
+          in: query
+          description: schema.MetricType for producing diffs.
+          required: true
+          schema:
+            type: string
+        - name: sort_field_name
+          in: query
+          description: |
+            Column name to sort by: metric_value_(left|right|diff)
+          required: false
+          schema:
+            type: string
+        - name: sort_ascending
+          in: query
+          description: Whether to sort ascending or descending
+          required: false
+          schema:
+            type: boolean
+        - name: limit
+          in: query
+          description: Number of rows to return
+          required: false
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          description: Number of rows to skip
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: An EvalRunSxSDetails object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvalRunSxSDetails'
+        '401':
+          description: Unauthorized request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+  /api/eval/run/summaries:
+    get:
+      summary: Get summaries for all eval runs
+      description: Returns summaries for all eval runs
+      parameters:
+        - name: evalset_id
+          in: query
+          description: evalset_id
+          required: false
+          schema:
+            type: string
+        - name: experiment_id_contains
+          in: query
+          description: search field for experiment_id
+          required: false
+          schema:
+            type: string
+        - name: sort_field_name
+          in: query
+          description: Column name to sort by, in [experiment_id, evalset_id, creation_time]
+          required: false
+          schema:
+            type: string
+        - name: sort_ascending
+          in: query
+          description: Whether to sort ascending or descending
+          required: false
+          schema:
+            type: boolean
+        - name: limit
+          in: query
+          description: Number of rows to return
+          required: false
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          description: Number of rows to skip
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: An EvalRunDetails object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvalRunsSummaries'
+        '401':
+          description: Unauthorized request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+  /api/eval/run/summary:
+    get:
+      summary: Get summary for a given eval runs
+      description: Returns summary for the eval run specified
+      parameters:
+        - name: experiment_id
+          in: query
+          description: The experiment_id of the eval run
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: An EvalRunSummary object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvalRunSummary'
+        '401':
+          description: Unauthorized request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
+  /api/eval/log:
+    put:
+      summary: Handler for adding log based eval runs.
+      description: |
+        Clients provide a batch of log entries in the request and we do the
+        following in order:
+        1. We add QA (answer based on LLM generated response) entries to the
+           logs dataset (which is created if it doesn't exist, we create one
+           run per day).
+        2. We add the QA entry to the evalrun (evalrun is created based on
+           groundedness metric only if it doesn't exist, we create one run
+           per month).
+        3. We upload inference outputs to the evalrun.
+        Clients can provide an optional `experiment_id_prefix` which we prepend
+        to the experiment_id to allow for partitioning their logs.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                log_entries:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      query:
+                        type: string
+                      inference_output:
+                        $ref: '#/components/schemas/InferenceOutput'
+                experiment_id_prefix:
+                  type: string
+                  nullable: true
+              required:
+                - log_entries
+      responses:
+        '200':
+          description: Success message
+          content:
+            application/json:
+              schema:
+                type: object
+components:
+  schemas:
+    GetEvalsetRequest:
+      type: object
+      properties:
+        evalset_id:
+          type: string
+    CreateEvalsetRequest:
+      type: object
+      properties:
+        evalset_id:
+          type: string
+        evalset_entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/EvalsetEntry'
+    PutEvalsetEntryRequest:
+      type: object
+      properties:
+        evalset_id:
+          type: string
+        entry_id:
+          type: string
+        evalset_entry:
+          type: object
+          items:
+            $ref: '#/components/schemas/EvalsetEntry'
+    Evalsets:
+      type: object
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/Evalset'
+    Evalset:
+      type: object
+      properties:
+        evalset_id:
+          type: string
+        evalset_entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/EvalsetEntryWithMetadata'
+    EvalsetMetadata:
+      type: object
+      properties:
+        evalset_id:
+          type: string
+        num_entries:
+          type: integer
+    EvalRunConfig:
+      type: object
+      properties:
+        experiment_id:
+          type: string
+        evalset_id:
+          type: string
+        metrics:
+          type: array
+          items:
+            $ref: '#/components/schemas/MetricType'
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+    UploadInferenceOutputsRequest:
+      type: object
+      properties:
+        experiment_id:
+          type: string
+        entry_id_to_inference_output:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/InferenceOutput'
+    InferenceOutput:
+      type: object
+      properties:
+        generated_response:
+          type: string
+        source_docids:
+          type: array
+          items:
+            type: string
+        contexts:
+          type: array
+          items:
+            type: string
+        debug_info:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+        - generated_response
+        - contexts
+    MetricType:
+      type: string
+      enum:
+        - GROUNDEDNESS
+        - SIMILARITY
+    EvalsetEntry:
+      type: object
+      properties:
+        query:
+          type: string
+        reference_answer:
+          type: string
+      required:
+        - query
+    EvalsetEntryWithMetadata:
+      type: object
+      properties:
+        entry:
+          $ref: '#/components/schemas/EvalsetEntry'
+        entry_id:
+          type: string
+        creation_time:
+          type: string
+          format: date-time
+    UserVisibleErrorMsg:
+      type: object
+      properties:
+        status:
+          type: string
+          default: error
+        status_msg:
+          type: string
+    EvalRunDetails:
+      type: object
+      properties:
+        experiment_id:
+          type: string
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/EvalRunEntry'
+    EvalRunEntry:
+      type: object
+      properties:
+        input:
+          $ref: '#/components/schemas/EvalsetEntry'
+        output:
+          $ref: '#/components/schemas/InferenceOutput'
+        metric_values:
+          type: object
+          additionalProperties:
+            type: number
+      required:
+        - input
+        - output
+    EvalRunSummary:
+      type: object
+      properties:
+        experiment_id:
+          type: string
+        num_entries:
+          type: integer
+        creation_time:
+          type: string
+          format: date-time
+          nullable: true
+        num_entries_with_output:
+          type: integer
+          default: 0
+        num_entries_with_metrics:
+          type: integer
+          default: 0
+        metrics_to_compute:
+          type: array
+          items:
+            type: string
+          default: []
+        metric_values:
+          type: object
+          additionalProperties:
+            type: number
+          nullable: true
+        evalset_id:
+          type: string
+          default: ""
+    EvalRunsSummaries:
+      type: object
+      properties:
+        summaries:
+          type: array
+          items:
+            $ref: '#/components/schemas/EvalRunSummary'
+      required:
+        - summaries
+    EvalRunSxSEntry:
+      type: object
+      properties:
+        input:
+          $ref: '#/components/schemas/EvalsetEntry'
+        output_left:
+          $ref: '#/components/schemas/InferenceOutput'
+        output_right:
+          $ref: '#/components/schemas/InferenceOutput'
+        metric_values:
+          type: object
+          additionalProperties:
+            type: number
+          description: 'Should contain keys: left, right, diff'
+      required:
+        - input
+        - output_left
+        - output_right
+        - metric_values
+    EvalRunSxSDetails:
+      type: object
+      properties:
+        experiment_id_left:
+          type: string
+        experiment_id_right:
+          type: string
+        metric_to_compare:
+          $ref: '#/components/schemas/MetricType'
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/EvalRunSxSEntry'
+      required:
+        - experiment_id_left
+        - experiment_id_right
+        - metric_to_compare
+        - entries
