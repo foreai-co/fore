@@ -69,6 +69,10 @@ class MetricType(str, Enum):
     # How many reference facts are entailed in the candidate answer?
     REFERENCE_FACT_RECALL = "REFERENCE_FACT_RECALL"
 
+    def is_implemented(self):
+        return self in {MetricType.GROUNDEDNESS, MetricType.SIMILARITY,
+                        MetricType.REFERENCE_FACT_RECALL}
+
 
 class EvalRunConfig(BaseModel):
     """Configuration for running an eval for a given evalset."""

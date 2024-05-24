@@ -280,10 +280,7 @@ class Foresight:
             "source_docids": [],
             "contexts": [],
         }
-        # TODO: use this line when we implement all metrics.
-        # eval_metrics = [m for m in MetricType]
-        eval_metrics = [MetricType.GROUNDEDNESS,
-                        MetricType.SIMILARITY, MetricType.REFERENCE_FACT_RECALL]
+        eval_metrics = [m for m in MetricType if m.is_implemented()]
 
         for m in eval_metrics:
             df[m.value.lower()] = []
