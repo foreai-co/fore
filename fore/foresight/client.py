@@ -1,8 +1,8 @@
 """The main client class for the foresight API."""
-from collections import defaultdict
 import importlib.util
-import uuid
 import logging
+import uuid
+from collections import defaultdict
 from typing import Callable, Dict, List, Optional, Union
 
 import requests
@@ -10,8 +10,8 @@ from requests import Response
 
 from fore.foresight.schema import (CreateEvalsetRequest, EvalRunConfig,
                                    EvalRunDetails, EvalRunEntry, EvalsetEntry,
-                                   EvalsetMetadata, InferenceOutput, LogRequest,
-                                   LogTuple, MetricType,
+                                   EvalsetMetadata, InferenceOutput,
+                                   LogRequest, LogTuple, MetricType,
                                    UploadInferenceOutputsRequest)
 from fore.foresight.utils import convert_to_pandas_dataframe
 
@@ -280,9 +280,7 @@ class Foresight:
             "source_docids": [],
             "contexts": [],
         }
-        # TODO: use this line when we implement all metrics.
-        # eval_metrics = [m for m in MetricType]
-        eval_metrics = [MetricType.GROUNDEDNESS, MetricType.SIMILARITY]
+        eval_metrics = [m for m in MetricType if m.is_implemented()]
 
         for m in eval_metrics:
             df[m.value.lower()] = []
@@ -294,9 +292,6 @@ class Foresight:
             df["generated_answer"].append(entry.output.generated_response)
             df["source_docids"].append(entry.output.source_docids)
             df["contexts"].append(entry.output.contexts)
-            # TODO: once we implement batching / parallel processing,
-            # make an update here to handle the case of entries with not
-            # yet computed metrics.
             for m in eval_metrics:
                 if m in entry.metric_values:
                     df[m.value.lower()].append(entry.metric_values[m])
