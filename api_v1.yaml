@@ -102,6 +102,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserVisibleErrorMsg'
+        '409':
+          description: Evalset already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVisibleErrorMsg'
         '500':
           description: Internal server error
           content:
