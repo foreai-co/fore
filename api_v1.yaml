@@ -1,7 +1,12 @@
 openapi: 3.0.0
 info:
-  title: User and Customer API
-  description: API for user and customer operations
+  title: foresight API
+  description: |
+    API for foresight. Exposes all operations for managing evalsets and evalruns.
+
+    API lives at https://foresight-gateway.foreai.co
+    
+    API token goes into the header: "Authorization": "Bearer <API_TOKEN>"
   version: 1.0.0
 paths:
   /api/eval/set:
