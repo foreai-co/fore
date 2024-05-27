@@ -780,7 +780,7 @@ components:
       type: string
       enum:
         - GROUNDEDNESS
-        - SIMILARITY
+        - REFERENCE_FACT_RECALL
     EvalsetEntry:
       type: object
       properties:
