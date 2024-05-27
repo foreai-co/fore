@@ -237,6 +237,89 @@ class TestForeSight(unittest.TestCase):
 
     @patch("fore.foresight.client.Foresight.get_evalrun_queries",
            mock_get_evalrun_queries)
+    @patch("uuid.uuid4")
+    @patch("fore.foresight.client.requests.request")
+    def test_create_simple_evalrun(self, mock_request, mock_uuid):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "evalset_id": "my_evalset",
+            "num_entries": 2
+        }
+
+        mock_request.return_value = mock_response
+        mock_uuid.side_effect = ["my_uuid1", "my_uuid2"]
+
+        run_config = EvalRunConfig(experiment_id="my_experiment",
+                                   evalset_id="my_evalset",
+                                   metrics=[
+                                       MetricType.GROUNDEDNESS,
+                                   ],
+                                   metadata={"my_key": "my_value"})
+
+        self.client.create_simple_evalrun(
+            run_config=run_config,
+            queries=["query1", "query2"],
+            answers=["answer1", "answer2"],
+            contexts=[["context1", "context2"], ["context3", "context4"]],
+            reference_answers=["reference1", "reference2"])
+
+        mock_request.assert_any_call(
+            method="post",
+            url=f"{TEST_URL}/api/eval/set",
+            headers={"Authorization": f"Bearer {TEST_TOKEN}"},
+            params=None,
+            json={
+                "evalset_id":
+                    "my_evalset",
+                "evalset_entries": [{
+                    "query": "query1",
+                    "reference_answer": "reference1",
+                    "entry_id": "my_uuid1",
+                }, {
+                    "query": "query2",
+                    "reference_answer": "reference2",
+                    "entry_id": "my_uuid2",
+                }]
+            },
+            timeout=TEST_TIMEOUT)
+
+        mock_request.assert_any_call(
+            method="post",
+            url=f"{TEST_URL}/api/eval/run",
+            headers={"Authorization": f"Bearer {TEST_TOKEN}"},
+            params=None,
+            json={
+                "experiment_id": "my_experiment",
+                "evalset_id": "my_evalset",
+                "metrics": ["GROUNDEDNESS",],
+                "metadata": {
+                    "my_key": "my_value"
+                }
+            },
+            timeout=TEST_TIMEOUT)
+
+        mock_request.assert_any_call(
+            method="put",
+            url=f"{TEST_URL}/api/eval/run/entries",
+            headers={"Authorization": f"Bearer {TEST_TOKEN}"},
+            params=None,
+            json={
+                "experiment_id": "my_experiment",
+                "entry_id_to_inference_output": {
+                    'entry_id1': {
+                        'generated_response': 'answer1',
+                        'contexts': ['context1', 'context2']
+                    },
+                    'entry_id2': {
+                        'generated_response': 'answer2',
+                        'contexts': ['context3', 'context4']
+                    }
+                }
+            },
+            timeout=TEST_TIMEOUT)
+
+    @patch("fore.foresight.client.Foresight.get_evalrun_queries",
+           mock_get_evalrun_queries)
     @patch("requests.request")
     def test_generate_answers_and_run_eval_batched(self, mock_request):
 

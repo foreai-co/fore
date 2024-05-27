@@ -50,6 +50,7 @@ class Foresight:
                        input_json: Optional[dict] = None) -> Response:
         """Makes an HTTP request to the API."""
 
+        print("request: endpoint", endpoint)
         response = requests.request(
             method=method,
             url=f"{self.api_url}{endpoint}",
@@ -100,6 +101,40 @@ class Foresight:
                                            mode="json", exclude_unset=True))
 
         return EvalsetMetadata(**response.json())
+
+    def create_simple_evalrun(
+            self,
+            run_config: EvalRunConfig,
+            queries: List[str],
+            answers: List[str],
+            contexts: Optional[List[List[str]]] = None,
+            reference_answers: Optional[List[str]] = None) -> None:
+        """Creates a simple evalset and evalrun from a list of queries, answers,
+        contexts and reference_answers.
+
+        Args:
+            run_config: The configuration for running the eval.
+            queries: A list of queries.
+            answers: A list of generated answers.
+            contexts: Optional list of contexts for each query.
+            reference_answers: Optional list of references/ground truth.
+        """
+        if len(queries) != len(answers):
+            raise ValueError("Number of queries and answers must match.")
+        if contexts and len(queries) != len(contexts):
+            raise ValueError("Number of queries and contexts must match.")
+
+        self.create_simple_evalset(evalset_id=run_config.evalset_id,
+                                   queries=queries,
+                                   reference_answers=reference_answers)
+
+        def GenerateFn(query: str) -> InferenceOutput:
+            idx = queries.index(query)
+            return InferenceOutput(generated_response=answers[idx],
+                                   contexts=contexts[idx] if contexts else [])
+
+        self.generate_answers_and_run_eval(generate_fn=GenerateFn,
+                                           run_config=run_config)
 
     def get_evalset(self, evalset_id: str) -> EvalsetMetadata:
         """Gets the evaluation set with metadata.
