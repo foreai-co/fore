@@ -50,7 +50,6 @@ class Foresight:
                        input_json: Optional[dict] = None) -> Response:
         """Makes an HTTP request to the API."""
 
-        print("request: endpoint", endpoint)
         response = requests.request(
             method=method,
             url=f"{self.api_url}{endpoint}",
