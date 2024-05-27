@@ -306,13 +306,13 @@ class TestForeSight(unittest.TestCase):
             json={
                 "experiment_id": "my_experiment",
                 "entry_id_to_inference_output": {
-                    'entry_id1': {
-                        'generated_response': 'answer1',
-                        'contexts': ['context1', 'context2']
+                    "entry_id1": {
+                        "generated_response": "answer1",
+                        "contexts": ["context1", "context2"]
                     },
-                    'entry_id2': {
-                        'generated_response': 'answer2',
-                        'contexts': ['context3', 'context4']
+                    "entry_id2": {
+                        "generated_response": "answer2",
+                        "contexts": ["context3", "context4"]
                     }
                 }
             },
