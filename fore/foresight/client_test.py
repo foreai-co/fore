@@ -453,7 +453,7 @@ class TestForeSight(unittest.TestCase):
                 },
                 "metric_values": {
                     MetricType.GROUNDEDNESS: 0.98,
-                    MetricType.SIMILARITY: 0.8,
+                    MetricType.REFERENCE_FACT_RECALL: 0.8,
                 } if metrics_are_computed else {}
             }]
         }
@@ -508,11 +508,8 @@ class TestForeSight(unittest.TestCase):
             "groundedness": {
                 0: 0.98
             },
-            "similarity": {
-                0: 0.8
-            },
             "reference_fact_recall": {
-                0: None
+                0: 0.8
             }
         }
 
@@ -563,9 +560,6 @@ class TestForeSight(unittest.TestCase):
                 ]
             },
             "groundedness": {
-                0: None
-            },
-            "similarity": {
                 0: None
             },
             "reference_fact_recall": {

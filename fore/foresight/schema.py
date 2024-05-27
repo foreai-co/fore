@@ -65,16 +65,12 @@ class MetricType(str, Enum):
     COMPLETENESS = "COMPLETENESS"
     # Is the response based on a provided context?
     GROUNDEDNESS = "GROUNDEDNESS"
-    # How similar is the response to the reference answer?
-    SIMILARITY = "SIMILARITY"
     # How many reference facts are entailed in the candidate answer?
     REFERENCE_FACT_RECALL = "REFERENCE_FACT_RECALL"
 
     def is_implemented(self):
-        return self in {
-            MetricType.GROUNDEDNESS, MetricType.SIMILARITY,
-            MetricType.REFERENCE_FACT_RECALL
-        }
+        return self in {MetricType.GROUNDEDNESS,
+                        MetricType.REFERENCE_FACT_RECALL}
 
 
 class EvalRunConfig(BaseModel):

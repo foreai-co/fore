@@ -45,7 +45,8 @@ Check our documentation at https://docs.foreai.co.
 
     run_config = EvalRunConfig(evalset_id="programming-languages",
                             experiment_id="my-smart-llm",
-                            metrics=[MetricType.GROUNDEDNESS, MetricType.SIMILARITY])
+                            metrics=[MetricType.GROUNDEDNESS, 
+                                     MetricType.REFERENCE_FACT_RECALL])
 
 
     def my_generate_fn(query: str) -> InferenceOutput:
@@ -64,6 +65,6 @@ Check our documentation at https://docs.foreai.co.
 
 We currently offer two metrics:
 * [Groundedness](https://docs.foreai.co/docs/foresight/metrics/groundedness)
-* [Ground Truth Similarty](https://docs.foreai.co/docs/foresight/metrics/ground_truth_similarity)
+* [Reference Fact Recall](https://docs.foreai.co/docs/foresight/metrics/reference_fact_recall)
 
 Check [here](https://docs.foreai.co/docs/category/metrics) for more information.
