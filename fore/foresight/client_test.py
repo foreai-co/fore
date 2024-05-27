@@ -418,7 +418,6 @@ class TestForeSight(unittest.TestCase):
                  timeout=TEST_TIMEOUT)
         ]
 
-        print("ze actual: ", mock_request.call_args_list)
         mock_request.assert_has_calls(expected_calls, any_order=True)
 
         # Assert that log_entries is empty after flushing
@@ -468,7 +467,8 @@ class TestForeSight(unittest.TestCase):
 
         dataframe = self.client.get_evalrun_details("my-smart-llm",
                                                     sort_by="input.query",
-                                                    limit=100)
+                                                    limit=100,
+                                                    convert_to_dataframe=True)
 
         mock_request.assert_called_with(
             method="get",
@@ -524,7 +524,8 @@ class TestForeSight(unittest.TestCase):
 
         dataframe = self.client.get_evalrun_details("my-smart-llm",
                                                     sort_by="input.query",
-                                                    limit=100)
+                                                    limit=100,
+                                                    convert_to_dataframe=True)
 
         mock_request.assert_called_with(
             method="get",

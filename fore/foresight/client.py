@@ -87,10 +87,10 @@ class Foresight:
             reference_answer = None
             if reference_answers:
                 reference_answer = reference_answers[i]
-            entries.append(EvalsetEntry(query=query,
-                                        entry_id=str(uuid.uuid4())))
+            new_entry = EvalsetEntry(query=query, entry_id=str(uuid.uuid4()))
             if reference_answer:
-                entries[-1].reference_answer = reference_answer
+                new_entry.reference_answer = reference_answer
+            entries.append(new_entry)
         evalset = CreateEvalsetRequest(evalset_id=evalset_id,
                                        evalset_entries=entries)
 
@@ -271,7 +271,7 @@ class Foresight:
             # certain threshold.
             self.flush()
 
-    def _convert_evalrun_details_to_dataframe(self, details: EvalRunDetails):
+    def convert_evalrun_details_to_dataframe(self, details: EvalRunDetails):
         """Converts an EvalRunDetails object to a DataFrame."""
         df = {
             "query": [],
@@ -307,7 +307,7 @@ class Foresight:
         experiment_id: str,
         sort_by: Optional[str] = "input.query",
         limit: Optional[int] = 100,
-        convert_to_dataframe: bool = True
+        convert_to_dataframe: bool = False
     ) -> Union[EvalRunDetails, "pandas.DataFrame"]:
         """Gets the details of an evaluation run.
 
@@ -341,6 +341,6 @@ class Foresight:
                 return details
 
             # Build a DataFrame from the response.
-            return self._convert_evalrun_details_to_dataframe(details)
+            return self.convert_evalrun_details_to_dataframe(details)
 
         return details
