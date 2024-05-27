@@ -10,8 +10,8 @@ from requests import Response
 
 from fore.foresight.schema import (CreateEvalsetRequest, EvalRunConfig,
                                    EvalRunDetails, EvalRunEntry, EvalsetEntry,
-                                   EvalsetMetadata, InferenceOutput,
-                                   LogRequest, LogTuple, MetricType,
+                                   EvalsetMetadata, InferenceOutput, LogRequest,
+                                   LogTuple, MetricType,
                                    UploadInferenceOutputsRequest)
 from fore.foresight.utils import convert_to_pandas_dataframe
 
@@ -87,17 +87,17 @@ class Foresight:
             reference_answer = None
             if reference_answers:
                 reference_answer = reference_answers[i]
-            entries.append(
-                EvalsetEntry(query=query,
-                             reference_answer=reference_answer,
-                             entry_id=str(uuid.uuid4())))
+            new_entry = EvalsetEntry(query=query, entry_id=str(uuid.uuid4()))
+            if reference_answer:
+                new_entry.reference_answer = reference_answer
+            entries.append(new_entry)
         evalset = CreateEvalsetRequest(evalset_id=evalset_id,
                                        evalset_entries=entries)
 
-        response = self.__make_request(
-            method="post",
-            endpoint="/api/eval/set",
-            input_json=evalset.model_dump(mode="json"))
+        response = self.__make_request(method="post",
+                                       endpoint="/api/eval/set",
+                                       input_json=evalset.model_dump(
+                                           mode="json", exclude_unset=True))
 
         return EvalsetMetadata(**response.json())
 
@@ -139,10 +139,10 @@ class Foresight:
 
         Returns: the HTTP response on success or raises an HTTPError on failure.
         """
-        response = self.__make_request(
-            method="post",
-            endpoint="/api/eval/run",
-            input_json=run_config.model_dump(mode="json"))
+        response = self.__make_request(method="post",
+                                       endpoint="/api/eval/run",
+                                       input_json=run_config.model_dump(
+                                           mode="json", exclude_unset=True))
 
         if response.status_code == 200:
             logging.info("Eval run with experiment_id %s created.",
@@ -188,10 +188,10 @@ class Foresight:
                 experiment_id=experiment_id,
                 entry_id_to_inference_output=outputs_chunk)
 
-            res = self.__make_request(
-                method="put",
-                endpoint="/api/eval/run/entries",
-                input_json=output_request.model_dump(mode="json"))
+            res = self.__make_request(method="put",
+                                      endpoint="/api/eval/run/entries",
+                                      input_json=output_request.model_dump(
+                                          mode="json", exclude_unset=True))
 
             if res.status_code != 200:
                 logging.error(
@@ -217,13 +217,13 @@ class Foresight:
             return
 
         for tag, log_entries in self.tag_to_log_entries.items():
-            log_request = LogRequest(
-                log_entries=log_entries,
-                experiment_id_prefix=(tag if tag != DEFAULT_TAG_NAME else None))
-            response = self.__make_request(
-                method="put",
-                endpoint="/api/eval/log",
-                input_json=log_request.model_dump(mode="json"))
+            log_request = LogRequest(log_entries=log_entries)
+            if tag != DEFAULT_TAG_NAME:
+                log_request.experiment_id_prefix = tag
+            response = self.__make_request(method="put",
+                                           endpoint="/api/eval/log",
+                                           input_json=log_request.model_dump(
+                                               mode="json", exclude_unset=True))
 
             if response.status_code == 200:
                 logging.info(
@@ -241,8 +241,8 @@ class Foresight:
     def log(self,
             query: str,
             response: str,
-            contexts: list[str],
-            tag: str | None = None) -> None:
+            contexts: List[str],
+            tag: Optional[str] = None) -> None:
         """Add log entries for evaluation. This only adds the entries
         in memory, but does not send any requests to foresight service.
         To send the request, flush needs to be called.
@@ -271,11 +271,12 @@ class Foresight:
             # certain threshold.
             self.flush()
 
-    def __convert_evalrun_details_to_dataframe(self, details: EvalRunDetails):
+    def convert_evalrun_details_to_dataframe(self, details: EvalRunDetails):
         """Converts an EvalRunDetails object to a DataFrame."""
         df = {
             "query": [],
             "reference_answer": [],
+            "reference_answer_facts": [],
             "generated_answer": [],
             "source_docids": [],
             "contexts": [],
@@ -289,6 +290,8 @@ class Foresight:
         for entry in details.entries:
             df["query"].append(entry.input.query)
             df["reference_answer"].append(entry.input.reference_answer)
+            df["reference_answer_facts"].append(
+                entry.input.reference_answer_facts)
             df["generated_answer"].append(entry.output.generated_response)
             df["source_docids"].append(entry.output.source_docids)
             df["contexts"].append(entry.output.contexts)
@@ -304,7 +307,7 @@ class Foresight:
         experiment_id: str,
         sort_by: Optional[str] = "input.query",
         limit: Optional[int] = 100,
-        convert_to_dataframe: bool = True
+        convert_to_dataframe: bool = False
     ) -> Union[EvalRunDetails, "pandas.DataFrame"]:
         """Gets the details of an evaluation run.
 
@@ -338,6 +341,6 @@ class Foresight:
                 return details
 
             # Build a DataFrame from the response.
-            return self.__convert_evalrun_details_to_dataframe(details)
+            return self.convert_evalrun_details_to_dataframe(details)
 
         return details

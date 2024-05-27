@@ -51,14 +51,10 @@ class TestForeSight(unittest.TestCase):
                     "my_evalset",
                 "evalset_entries": [{
                     "query": "query1",
-                    "reference_answer": None,
                     "entry_id": "my_uuid1",
-                    "creation_time": None
                 }, {
                     "query": "query2",
-                    "reference_answer": None,
                     "entry_id": "my_uuid2",
-                    "creation_time": None
                 }]
             },
             timeout=TEST_TIMEOUT)
@@ -94,12 +90,10 @@ class TestForeSight(unittest.TestCase):
                     "query": "query1",
                     "reference_answer": "reference1",
                     "entry_id": "my_uuid1",
-                    "creation_time": None
                 }, {
                     "query": "query2",
                     "reference_answer": "reference2",
                     "entry_id": "my_uuid2",
-                    "creation_time": None
                 }]
             },
             timeout=TEST_TIMEOUT)
@@ -132,7 +126,6 @@ class TestForeSight(unittest.TestCase):
             "entries": [{
                 "entry": {
                     "query": "query1",
-                    "reference_answer": None
                 },
                 "entry_id": "id1",
                 "creation_time": "2024-01-01T00:00:00.000Z"
@@ -233,14 +226,10 @@ class TestForeSight(unittest.TestCase):
                     "entry_id1": {
                         "generated_response": "QUERY1",
                         "contexts": [],
-                        "debug_info": None,
-                        "source_docids": None,
                     },
                     "entry_id2": {
                         "generated_response": "QUERY2",
                         "contexts": [],
-                        "debug_info": None,
-                        "source_docids": None,
                     }
                 }
             },
@@ -283,8 +272,6 @@ class TestForeSight(unittest.TestCase):
                          "entry_id1": {
                              "generated_response": "QUERY1",
                              "contexts": [],
-                             "debug_info": None,
-                             "source_docids": None,
                          },
                      }
                  },
@@ -299,8 +286,6 @@ class TestForeSight(unittest.TestCase):
                          "entry_id2": {
                              "generated_response": "QUERY2",
                              "contexts": [],
-                             "debug_info": None,
-                             "source_docids": None,
                          }
                      }
                  },
@@ -345,20 +330,15 @@ class TestForeSight(unittest.TestCase):
                          "query": "test_query1",
                          "inference_output": {
                              "generated_response": "test_response1",
-                             "source_docids": None,
                              "contexts": ["context1", "context2"],
-                             "debug_info": None
                          }
                      }, {
                          "query": "test_query2",
                          "inference_output": {
                              "generated_response": "test_response2",
-                             "source_docids": None,
                              "contexts": ["context3", "context4"],
-                             "debug_info": None
                          }
                      }],
-                     "experiment_id_prefix": None
                  },
                  timeout=TEST_TIMEOUT),
             call(method="put",
@@ -370,9 +350,7 @@ class TestForeSight(unittest.TestCase):
                          "query": "test_query4",
                          "inference_output": {
                              "generated_response": "test_response4",
-                             "source_docids": None,
                              "contexts": ["context7", "context8"],
-                             "debug_info": None
                          }
                      },],
                      "experiment_id_prefix": "great_model"
@@ -418,12 +396,9 @@ class TestForeSight(unittest.TestCase):
                          "query": "test_query1",
                          "inference_output": {
                              "generated_response": "test_response1",
-                             "source_docids": None,
                              "contexts": ["context1"],
-                             "debug_info": None
                          }
                      }],
-                     "experiment_id_prefix": None
                  },
                  timeout=TEST_TIMEOUT),
             call(method="put",
@@ -435,9 +410,7 @@ class TestForeSight(unittest.TestCase):
                          "query": "test_query2",
                          "inference_output": {
                              "generated_response": "test_response2",
-                             "source_docids": None,
                              "contexts": ["context2"],
-                             "debug_info": None
                          }
                      },],
                      "experiment_id_prefix": "great_model"
@@ -467,16 +440,16 @@ class TestForeSight(unittest.TestCase):
                 "input": {
                     "entry_id": "my-entry-id",
                     "query": "who is the king of the world",
-                    "reference_answer": "a man named Bob"
+                    "reference_answer": "a man named Bob",
+                    "reference_answer_facts": ["a man named Bob exists."]
                 },
                 "output": {
-                    "generated_response": "Bob",
-                    "source_docids": None,
+                    "generated_response":
+                        "Bob",
                     "contexts": [
                         "Alice is the queen of the world",
                         "Bob is the king of the world"
                     ],
-                    "debug_info": None
                 },
                 "metric_values": {
                     MetricType.GROUNDEDNESS: 0.98,
@@ -494,7 +467,8 @@ class TestForeSight(unittest.TestCase):
 
         dataframe = self.client.get_evalrun_details("my-smart-llm",
                                                     sort_by="input.query",
-                                                    limit=100)
+                                                    limit=100,
+                                                    convert_to_dataframe=True)
 
         mock_request.assert_called_with(
             method="get",
@@ -515,6 +489,9 @@ class TestForeSight(unittest.TestCase):
             },
             "reference_answer": {
                 0: "a man named Bob"
+            },
+            "reference_answer_facts": {
+                0: ["a man named Bob exists."]
             },
             "generated_answer": {
                 0: "Bob"
@@ -547,7 +524,8 @@ class TestForeSight(unittest.TestCase):
 
         dataframe = self.client.get_evalrun_details("my-smart-llm",
                                                     sort_by="input.query",
-                                                    limit=100)
+                                                    limit=100,
+                                                    convert_to_dataframe=True)
 
         mock_request.assert_called_with(
             method="get",
@@ -568,6 +546,9 @@ class TestForeSight(unittest.TestCase):
             },
             "reference_answer": {
                 0: "a man named Bob"
+            },
+            "reference_answer_facts": {
+                0: ["a man named Bob exists."]
             },
             "generated_answer": {
                 0: "Bob"

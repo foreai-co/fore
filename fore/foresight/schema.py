@@ -12,6 +12,7 @@ class EvalsetQATuple(BaseModel):
     """
     query: str
     reference_answer: Optional[str] = None
+    reference_answer_facts: Optional[List[str]] = None
 
 
 class EvalsetMetadata(BaseModel):
@@ -70,8 +71,10 @@ class MetricType(str, Enum):
     REFERENCE_FACT_RECALL = "REFERENCE_FACT_RECALL"
 
     def is_implemented(self):
-        return self in {MetricType.GROUNDEDNESS, MetricType.SIMILARITY,
-                        MetricType.REFERENCE_FACT_RECALL}
+        return self in {
+            MetricType.GROUNDEDNESS, MetricType.SIMILARITY,
+            MetricType.REFERENCE_FACT_RECALL
+        }
 
 
 class EvalRunConfig(BaseModel):
@@ -147,9 +150,9 @@ class LogTuple(BaseModel):
 
 class LogRequest(BaseModel):
     """Request to log query and inference outputs."""
-    log_entries: list[LogTuple]
+    log_entries: List[LogTuple]
     # e.g. "great-model-v01". This will be prepended to the
     # name of the eval run (experiment_id).
     # The complete eval run experiment_id will be of the form:
     #   "great-model-v01_logs_groundedness_YYYYMMDD"
-    experiment_id_prefix: str | None = None
+    experiment_id_prefix: Optional[str] = None
