@@ -116,7 +116,9 @@ class Foresight:
             queries: A list of queries.
             answers: A list of generated answers.
             contexts: Optional list of contexts for each query.
+                This is required for some metrics like Groundedness.
             reference_answers: Optional list of references/ground truth.
+                This is required for metrics like ReferenceFactRecall.
         """
         if len(queries) != len(answers):
             raise ValueError("Number of queries and answers must match.")
@@ -127,12 +129,12 @@ class Foresight:
                                    queries=queries,
                                    reference_answers=reference_answers)
 
-        def GenerateFn(query: str) -> InferenceOutput:
+        def generate_fn(query: str) -> InferenceOutput:
             idx = queries.index(query)
             return InferenceOutput(generated_response=answers[idx],
                                    contexts=contexts[idx] if contexts else [])
 
-        self.generate_answers_and_run_eval(generate_fn=GenerateFn,
+        self.generate_answers_and_run_eval(generate_fn=generate_fn,
                                            run_config=run_config)
 
     def get_evalset(self, evalset_id: str) -> EvalsetMetadata:
