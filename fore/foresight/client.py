@@ -245,8 +245,9 @@ class Foresight:
                                                  run_config: EvalRunConfig):
         """Creates an eval run entry, generates answers and runs the eval.
 
-        This method calls the generate_fn on each query in the evalset, triggers
-        the metric computation and caches all results in a new eval run.
+        This method calls the generate_fn on each query in the evalset,
+        triggers the metric computation and caches all results in a new eval
+        run.
 
         Args:
             generate_fn: A function that takes a query and returns an
@@ -265,7 +266,8 @@ class Foresight:
         # Use a ThreadPoolExecutor to parallelize both generation and upload
         with ThreadPoolExecutor() as executor:
             future_to_entry_id = {executor.submit(
-                generate_fn, query): entry_id for entry_id, query in queries.items()}
+                generate_fn, query):
+                entry_id for entry_id, query in queries.items()}
 
             for future in as_completed(future_to_entry_id):
                 entry_id = future_to_entry_id[future]
@@ -273,32 +275,37 @@ class Foresight:
                     inference_output = future.result()
                     output_request = UploadInferenceOutputsRequest(
                         experiment_id=experiment_id,
-                        entry_id_to_inference_output={entry_id: inference_output})
+                        entry_id_to_inference_output={
+                            entry_id: inference_output})
 
                     upload_future = executor.submit(
                         self.__make_request,
                         method="put",
                         endpoint="/api/eval/run/entries",
-                        input_json=output_request.model_dump(mode="json", exclude_unset=True))
+                        input_json=output_request.model_dump(
+                            mode="json", exclude_unset=True))
 
                     upload_res = upload_future.result()
                     if upload_res.status_code != 200:
                         logging.error(
-                            "Error uploading inference output for entry_id %s, experiment_id: %s",
+                            "Error uploading inference output for "
+                            "entry_id %s, experiment_id: %s",
                             entry_id, experiment_id)
                         return
 
                 except requests.exceptions.RequestException as e:
                     logging.error(
-                        "Error generating or uploading inference output for entry_id %s: %s",
-                        entry_id, e)
+                        "Error generating or uploading inference output for "
+                        "entry_id %s: %s", entry_id, e)
                     continue
                 except ValueError as e:
                     logging.error(
-                        "Value error generating inference output for entry_id %s: %s", entry_id, e)
+                        "Value error generating inference output for "
+                        "entry_id %s: %s", entry_id, e)
 
         logging.info(
-            "Eval run started successfully. Visit %s to view results.", self.ui_url)
+            "Eval run started successfully. Visit %s to view results.",
+            self.ui_url)
 
     def flush(self):
         """Flush the log entries and run evals on them.
