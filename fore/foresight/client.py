@@ -258,7 +258,7 @@ class Foresight:
             generate_fn: A function that takes a query and returns an
                 InferenceOutput.
             run_config: The configuration for running the eval.
-            max_workers: Will default to the number of processors on the machine.
+            max_workers: Defaults to the number of processors on the machine.
         
         Returns:
             Tuple[int, int, int]: num_successful_uploads, num_generation_errors
