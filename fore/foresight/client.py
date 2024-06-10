@@ -1,9 +1,11 @@
 """The main client class for the foresight API."""
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import importlib.util
 import logging
 import uuid
 from collections import defaultdict
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Tuple, Union
+from tqdm import tqdm
 
 import requests
 from requests import Response
@@ -192,8 +194,9 @@ class Foresight:
                                       batch_size=10):
         """Creates an eval run entry, generates answers and runs the eval.
 
-        This method calls the generate_fn on each query in the evalset, triggers
-        the metric computation and caches all results in a new eval run.
+        This method call the generate_fn on each query in the evalset, and
+        creates an evaluation run for the generated responses given metrics
+        provided in the eval run config.
 
         Args:
             generate_fn: A function that takes a query and returns an
@@ -238,6 +241,111 @@ class Foresight:
         logging.info(
             "Eval run started successfully."
             "Visit %s to view results.", self.ui_url)
+
+    def concurrent_generate_answers_and_run_eval(
+            self,
+            generate_fn: GenerateFnT,
+            run_config: EvalRunConfig,
+            max_workers: Optional[int] = None) -> Tuple[int, int, int]:
+        """Creates an eval run entry, generates answers and runs the eval.
+
+        This method call the generate_fn on each query in the evalset, and
+        creates an evaluation run for the generated responses given metrics
+        provided in the eval run config.
+        All of the generate_fn calls happen in parallel.
+
+        Args:
+            generate_fn: A function that takes a query and returns an
+                InferenceOutput.
+            run_config: The configuration for running the eval.
+            max_workers: Defaults to the number of processors on the machine.
+        
+        Returns:
+            Tuple[int, int, int]: num_successful_uploads, num_generation_errors
+            and num_upload_errors.
+        """
+        self.create_evalrun(run_config=run_config)
+        experiment_id = run_config.experiment_id
+        queries = self.get_evalrun_queries(experiment_id=experiment_id)
+
+        if not queries:
+            logging.error(
+                "No queries found for experiment_id: %s", experiment_id)
+            return
+
+        total_queries = len(queries.items())
+        progress_bar = tqdm(total=total_queries)
+        future_to_entry_id = dict()
+        num_successful_uploads = 0
+        num_generate_errors = 0
+        num_upload_errors = 0
+
+        # Use a ThreadPoolExecutor to parallelize both generation and upload
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            for entry_id, query in queries.items():
+                generate_future = executor.submit(generate_fn, query)
+                generate_future.add_done_callback(progress_bar.update(1))
+                future_to_entry_id[generate_future] = entry_id
+
+            for future in as_completed(future_to_entry_id):
+                entry_id = future_to_entry_id[future]
+                try:
+                    inference_output = future.result()
+                except Exception as e:  # pylint: disable=broad-exception-caught
+                    logging.error(
+                        "Error generating inference output for "
+                        "entry_id %s: %s", entry_id, e)
+                    num_generate_errors+=1
+                    continue
+                output_request = UploadInferenceOutputsRequest(
+                    experiment_id=experiment_id,
+                    entry_id_to_inference_output={
+                        entry_id: inference_output})
+
+                upload_future = executor.submit(
+                    self.__make_request,
+                    method="put",
+                    endpoint="/api/eval/run/entries",
+                    input_json=output_request.model_dump(
+                        mode="json", exclude_unset=True))
+
+                try:
+                    upload_res = upload_future.result()
+                except Exception as e:  # pylint: disable=broad-exception-caught
+                    logging.error(
+                        "Error uploading inference output for "
+                        "entry_id %s: %s", entry_id, e)
+                    num_upload_errors+=1
+                    continue
+
+                if upload_res.status_code != 200:
+                    logging.error(
+                        "Error uploading inference output for "
+                        "entry_id %s, experiment_id: %s, error: %s",
+                        entry_id, experiment_id, upload_res.json())
+                    return (num_successful_uploads,
+                        num_generate_errors,
+                        num_upload_errors)
+                num_successful_uploads+=1
+
+        progress_bar.close()
+
+        if num_generate_errors > 0 or num_upload_errors > 0:
+            logging.info("Some of the entries had errors. Number of entries "
+                         "which failed with generation: %d, Number of entries "
+                         "which failed with upload: %d",
+                         num_generate_errors, num_upload_errors)
+
+        if num_generate_errors + num_upload_errors >= total_queries:
+            logging.error(
+                "Eval run created, but none of the entries could be uploaded.")
+
+        else:
+            logging.info(
+            "Eval run started successfully. Visit %s to view results.",
+            self.ui_url)
+
+        return (num_successful_uploads, num_generate_errors, num_upload_errors)
 
     def flush(self):
         """Flush the log entries and run evals on them.
