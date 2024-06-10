@@ -194,8 +194,9 @@ class Foresight:
                                       batch_size=10):
         """Creates an eval run entry, generates answers and runs the eval.
 
-        This method calls the generate_fn on each query in the evalset, triggers
-        the metric computation and caches all results in a new eval run.
+        This method call the generate_fn on each query in the evalset, and
+        creates an evaluation run for the generated responses given metrics
+        provided in the eval run config.
 
         Args:
             generate_fn: A function that takes a query and returns an
@@ -248,9 +249,10 @@ class Foresight:
             max_workers: Optional[int] = None) -> Tuple[int, int, int]:
         """Creates an eval run entry, generates answers and runs the eval.
 
-        This method calls the generate_fn on each query in the evalset,
-        triggers the metric computation and caches all results in a new eval
-        run. All of the generate_fn calls happen in parallel.
+        This method call the generate_fn on each query in the evalset, and
+        creates an evaluation run for the generated responses given metrics
+        provided in the eval run config.
+        All of the generate_fn calls happen in parallel.
 
         Args:
             generate_fn: A function that takes a query and returns an
