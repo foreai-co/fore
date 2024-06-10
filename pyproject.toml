@@ -15,6 +15,7 @@ license = {text = "Apache 2.0 License"}
 dependencies = [
     'pydantic>2.5',
     'requests',
+    'tqdm'
 ]
 
 [project.optional-dependencies]

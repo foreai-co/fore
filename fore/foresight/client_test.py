@@ -379,6 +379,8 @@ class TestForeSight(unittest.TestCase):
            mock_get_evalrun_queries)
     @patch("requests.request")
     def test_concurrent_generate_answers_and_run_eval(self, mock_request):
+        """Tests for concurrently generating answers and running evals.
+        """
 
         def generate_fn(query: str) -> InferenceOutput:
             return InferenceOutput(generated_response=query.upper(),
@@ -388,7 +390,7 @@ class TestForeSight(unittest.TestCase):
         mock_response.status_code = 200
         mock_request.return_value = mock_response
 
-        self.client.concurrent_generate_answers_and_run_eval(
+        self.assertEqual(self.client.concurrent_generate_answers_and_run_eval(
             generate_fn=generate_fn,
             run_config=EvalRunConfig(experiment_id="my_experiment",
                                      evalset_id="my_evalset",
@@ -397,7 +399,119 @@ class TestForeSight(unittest.TestCase):
                                          MetricType.COMPLETENESS,
                                          MetricType.GROUNDEDNESS,
                                      ],
-                                     metadata={"my_key": "my_value"}))
+                                     metadata={"my_key": "my_value"})),
+                         (2, 0, 0))
+
+        # Skip the first request that creates the evalrun.
+        self.assertSequenceEqual(mock_request.call_args_list[1:], [
+            call(method="put",
+                 url=f"{TEST_URL}/api/eval/run/entries",
+                 headers={"Authorization": f"Bearer {TEST_TOKEN}"},
+                 params=None,
+                 json={
+                     "experiment_id": "my_experiment",
+                     "entry_id_to_inference_output": {
+                        "entry_id1": {
+                            "generated_response": "QUERY1",
+                            "contexts": [],
+                        },
+                     }
+                 },
+                 timeout=TEST_TIMEOUT),
+            call(method="put",
+                 url=f"{TEST_URL}/api/eval/run/entries",
+                 headers={"Authorization": f"Bearer {TEST_TOKEN}"},
+                 params=None,
+                 json={
+                     "experiment_id": "my_experiment",
+                     "entry_id_to_inference_output": {
+                        "entry_id2": {
+                            "generated_response": "QUERY2",
+                            "contexts": [],
+                        }
+                     }
+                 },
+                 timeout=TEST_TIMEOUT)
+        ])
+
+    @patch("fore.foresight.client.Foresight.get_evalrun_queries",
+           mock_get_evalrun_queries)
+    @patch("requests.request")
+    def test_concurrent_generate_answers_and_run_eval_with_generate_failure(
+            self, mock_request):
+        """Tests for concurrently generating answers and running evals
+        while one of the generate_fn calls fail.
+        """
+
+        def generate_fn(query: str) -> InferenceOutput:
+            if query == "query1":
+                raise ValueError("We hate this query")
+            return InferenceOutput(generated_response=query.upper(),
+                                   contexts=[])
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_request.return_value = mock_response
+
+        self.assertEqual(self.client.concurrent_generate_answers_and_run_eval(
+            generate_fn=generate_fn,
+            run_config=EvalRunConfig(experiment_id="my_experiment",
+                                     evalset_id="my_evalset",
+                                     metrics=[
+                                         MetricType.RELEVANCE,
+                                         MetricType.COMPLETENESS,
+                                         MetricType.GROUNDEDNESS,
+                                     ],
+                                     metadata={"my_key": "my_value"})),
+                         (1, 1, 0))
+
+        # Skip the first request that creates the evalrun.
+        self.assertSequenceEqual(mock_request.call_args_list[1:], [
+            call(method="put",
+                 url=f"{TEST_URL}/api/eval/run/entries",
+                 headers={"Authorization": f"Bearer {TEST_TOKEN}"},
+                 params=None,
+                 json={
+                     "experiment_id": "my_experiment",
+                     "entry_id_to_inference_output": {
+                        "entry_id2": {
+                            "generated_response": "QUERY2",
+                            "contexts": [],
+                        }
+                     }
+                 },
+                 timeout=TEST_TIMEOUT)
+        ])
+
+    @patch("fore.foresight.client.Foresight.get_evalrun_queries",
+           mock_get_evalrun_queries)
+    @patch("requests.request")
+    def test_concurrent_generate_answers_and_run_eval_with_upload_failure(
+            self, mock_request):
+        """Tests for concurrently generating answers and running evals
+        while one of the upload calls fail.
+        """
+
+        def generate_fn(query: str) -> InferenceOutput:
+            return InferenceOutput(generated_response=query.upper(),
+                                   contexts=[])
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_request.side_effect = [
+            mock_response, ValueError("An error occurred"), mock_response]
+
+        self.assertEqual(self.client.concurrent_generate_answers_and_run_eval(
+            generate_fn=generate_fn,
+            run_config=EvalRunConfig(experiment_id="my_experiment",
+                                     evalset_id="my_evalset",
+                                     metrics=[
+                                         MetricType.RELEVANCE,
+                                         MetricType.COMPLETENESS,
+                                         MetricType.GROUNDEDNESS,
+                                     ],
+                                     metadata={"my_key": "my_value"})),
+                         (1, 0, 1))
 
         # Skip the first request that creates the evalrun.
         self.assertSequenceEqual(mock_request.call_args_list[1:], [
