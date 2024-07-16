@@ -2,6 +2,7 @@
 import base64
 import logging
 import os
+import re
 from time import sleep
 from typing import List, Optional, Union
 
@@ -10,7 +11,7 @@ from requests import Response
 
 from fore.cj.schema import State, TestCase, TestCaseRequest, TestGenerationStep
 
-GATEWAY_URL = "https://critical-journeys.foreai.co"
+GATEWAY_URL = "https://cj.foreai.co"
 
 
 class CriticalJourneysClient:
@@ -25,9 +26,9 @@ class CriticalJourneysClient:
 
         self.timeout_seconds = 60
         logging.basicConfig(
-            format="critical-journeys %(levelname)s: %(message)s",
+            format="cj %(levelname)s: %(message)s",
             level=log_level)
-        logging.info("Foresight client initialized")
+        logging.info("CJ client initialized")
 
     def __make_request(self,
                        method: str,
@@ -64,7 +65,7 @@ class CriticalJourneysClient:
             input_json=test_case_request.model_dump(mode="json",
                                                     exclude_unset=True))
 
-        test_case_id = response.text.replace('"', "")
+        test_case_id = re.findall(r'"([a-f0-9]+)"', response.text)[0]
         self.test_case_ids.append(test_case_id)
         logging.info("Submitted test case with ID: %s", test_case_id)
 
@@ -93,11 +94,11 @@ class CriticalJourneysClient:
         """
         save_dir = os.path.expanduser(save_dir)
 
-        screenshot_folder = f"{save_dir}/screenshots/"
+        screenshot_folder = os.path.join(save_dir, "screenshots/")
         os.makedirs(screenshot_folder, exist_ok=True)
-        scripts_folder = f"{save_dir}/scripts/"
+        scripts_folder = os.path.join(save_dir, "scripts/")
         os.makedirs(scripts_folder, exist_ok=True)
-        planner_messages_folder = f"{save_dir}/planner_messages/"
+        planner_messages_folder = os.path.join(save_dir, "planner_messages/")
         os.makedirs(planner_messages_folder, exist_ok=True)
 
         test_case_finished = False
@@ -105,17 +106,19 @@ class CriticalJourneysClient:
 
         def save_generation_step(step: TestGenerationStep, current_step: int):
             if step.screenshot:
-                screenshot_path = f"{screenshot_folder}step_{current_step}.png"
+                screenshot_path = os.path.join(screenshot_folder,
+                                               f"step_{current_step}.png")
                 with open(screenshot_path, "wb") as f:
                     f.write(base64.b64decode(step.screenshot))
 
             if step.generated_code:
-                script_path = f"{scripts_folder}step_{current_step}.py"
+                script_path = os.path.join(scripts_folder,
+                                           f"step_{current_step}.py")
                 with open(script_path, "w", encoding="utf-8") as f:
                     f.write(step.generated_code)
 
-            planner_message_path = (f"{planner_messages_folder}"
-                                    f"step_{current_step}.md")
+            planner_message_path = os.path.join(planner_messages_folder,
+                                                f"step_{current_step}.md")
             with open(planner_message_path, "w", encoding="utf-8") as f:
                 f.write(step.planner_message)
 
@@ -144,16 +147,18 @@ class CriticalJourneysClient:
                 # Remove old generation steps if the test case is retrying
                 logging.info("Test case was retried.")
                 for i in range(generation_steps_saved):
-                    os.remove(f"{screenshot_folder}step_{i}.png")
-                    os.remove(f"{scripts_folder}step_{i}.py")
-                    os.remove(f"{planner_messages_folder}step_{i}.md")
+                    os.remove(os.path.join(screenshot_folder, f"step_{i}.png"))
+                    os.remove(os.path.join(scripts_folder, f"step_{i}.py"))
+                    os.remove(os.path.join(
+                        planner_messages_folder, f"step_{i}.md"))
 
             if test_case.state not in [State.PENDING, State.RUNNING]:
                 test_case_finished = True
                 logging.info("Test case %s completed.", test_case_id)
                 extension = get_file_extension_from_language(
                     test_case.programming_language)
-                with open(f"{scripts_folder}final_script{extension}",
+                with open(os.path.join(scripts_folder,
+                                       f"final_script{extension}"),
                           "w",
                           encoding="utf-8") as f:
                     f.write(test_case.final_script)
